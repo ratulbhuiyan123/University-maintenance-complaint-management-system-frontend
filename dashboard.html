@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - CampusCare (CP-2)</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .user-welcome h2 {
+      font-size: 1.5rem;
+      color: var(--primary-color);
+    }
+    .user-welcome span {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .complaint-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .complaint-table th, .complaint-table td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.9rem;
+    }
+    .complaint-table th {
+      background-color: #f1f5f9;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+    .actions-cell {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h2>🏛️ CampusCare</h2>
+      <span>Portal</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="dashboard.html" class="active">Dashboard</a></li>
+      <li><a href="new-complaint.html">+ New Complaint</a></li>
+      <li><a href="login.html" id="logoutBtn" class="btn-nav-login">Sign Out</a></li>
+    </ul>
+  </nav>
+
+  <!-- Dashboard Main Content -->
+  <main class="main-content">
+    
+    <div class="dashboard-header">
+      <div class="user-welcome">
+        <h2>Welcome, <span id="userNameDisplay">Loading...</span></h2>
+        <span>Logged in as: <strong id="userRoleDisplay" style="color: var(--primary-color);">...</strong> | University Portal</span>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button id="btnRefresh" class="btn btn-outline btn-sm">🔄 Refresh</button>
+        <a href="new-complaint.html" class="btn btn-primary">+ Report New Issue</a>
+      </div>
+    </div>
+
+    <!-- Status Milestone Cards -->
+    <div class="status-grid">
+      <div class="stat-card all">
+        <h4>Total Submitted</h4>
+        <div class="number" id="statTotal">0</div>
+      </div>
+      <div class="stat-card pending">
+        <h4>Pending Review</h4>
+        <div class="number" id="statPending">0</div>
+      </div>
+      <div class="stat-card in-progress">
+        <h4>In Progress / Assigned</h4>
+        <div class="number" id="statInProgress">0</div>
+      </div>
+      <div class="stat-card resolved">
+        <h4>Resolved</h4>
+        <div class="number" id="statResolved">0</div>
+      </div>
+    </div>
+
+    <!-- Filter Tabs & Title -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
+      <h3 style="color: var(--primary-color);" id="tableTitle">Maintenance Complaints Overview</h3>
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="ALL">All (<span id="countAll">0</span>)</button>
+        <button class="filter-tab" data-filter="PENDING">Pending (<span id="countPending">0</span>)</button>
+        <button class="filter-tab" data-filter="IN_PROGRESS">In Progress (<span id="countInProgress">0</span>)</button>
+        <button class="filter-tab" data-filter="RESOLVED">Resolved (<span id="countResolved">0</span>)</button>
+      </div>
+    </div>
+
+    <!-- Complaints Table -->
+    <div style="overflow-x: auto;">
+      <table class="complaint-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Category</th>
+            <th>Location</th>
+            <th>Description</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="complaintsTableBody">
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+              Connecting to database & loading complaints...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <!-- Edit Complaint Modal (CP-2 CRUD Integration) -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Edit Complaint Details</h3>
+        <button type="button" class="modal-close" id="btnModalClose">&times;</button>
+      </div>
+
+      <form id="editComplaintForm">
+        <input type="hidden" id="editComplaintId" />
+
+        <div class="form-group">
+          <label>Complaint Location & Category</label>
+          <div id="editComplaintMeta" style="font-weight: 600; color: var(--primary-color); padding: 8px; background: #f8fafc; border-radius: 4px;">
+            ...
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="editPriority">Priority</label>
+          <select id="editPriority" class="form-control" required>
+            <option value="LOW">Low</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HIGH">High</option>
+            <option value="URGENT">Urgent</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="editDescription">Description</label>
+          <textarea id="editDescription" class="form-control" rows="3" required></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-outline" id="btnModalCancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveEdit">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2026 University Maintenance & Complaint Management System | CP-2 Implementation</p>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

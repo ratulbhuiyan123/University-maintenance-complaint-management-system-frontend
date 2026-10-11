@@ -1,0 +1,77 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In - CampusCare</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h2>🏛️ CampusCare</h2>
+      <span>Portal</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="register.html">Register</a></li>
+      <li><a href="login.html" class="btn-nav-login active">Sign In</a></li>
+    </ul>
+  </nav>
+
+  <!-- Login Container -->
+  <main class="main-content">
+    <div class="auth-container">
+      <div class="auth-header">
+        <h2>Account Login</h2>
+        <p>Enter your university credentials to continue</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Campus Email</label>
+          <input 
+            type="email" 
+            id="email" 
+            class="form-control" 
+            placeholder="e.g. student@campus.edu" 
+            required 
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            class="form-control" 
+            placeholder="••••••••" 
+            required 
+          />
+        </div>
+
+        <button type="submit" class="btn btn-block">Sign In</button>
+      </form>
+
+      <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem;">
+        <p>Don't have an account? <a href="register.html" style="color: var(--secondary-color); font-weight: 600;">Register here</a></p>
+      </div>
+
+      <div style="margin-top: 1.5rem; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+        <p><strong>Demo Accounts (password: password123):</strong></p>
+        <p>Student: <code>student@campus.edu</code> | Admin: <code>admin@campus.edu</code></p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2026 University Maintenance & Complaint Management System</p>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

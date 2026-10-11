@@ -3,133 +3,121 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - CampusCare (CP-2)</title>
+  <title>Dashboard — CampusCare (CP-2)</title>
   <link rel="stylesheet" href="css/style.css">
-  <style>
-    .dashboard-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border-color);
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-    .user-welcome h2 {
-      font-size: 1.5rem;
-      color: var(--primary-color);
-    }
-    .user-welcome span {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-    }
-    .complaint-table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      overflow: hidden;
-      box-shadow: var(--shadow);
-    }
-    .complaint-table th, .complaint-table td {
-      padding: 12px 14px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-      font-size: 0.9rem;
-    }
-    .complaint-table th {
-      background-color: #f1f5f9;
-      font-weight: 600;
-      color: var(--text-dark);
-    }
-    .actions-cell {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-  </style>
 </head>
 <body>
 
-  <!-- Top Navigation Bar -->
+  <!-- Top Glass Navigation Bar -->
   <nav class="navbar">
-    <div class="nav-brand">
-      <h2>🏛️ CampusCare</h2>
-      <span>Portal</span>
-    </div>
+    <a href="index.html" class="nav-brand">
+      <div class="nav-brand-icon">🏛️</div>
+      <div class="nav-brand-title">
+        <h2>CampusCare</h2>
+        <span>University Portal</span>
+      </div>
+    </a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="dashboard.html" class="active">Dashboard</a></li>
-      <li><a href="new-complaint.html">+ New Complaint</a></li>
-      <li><a href="login.html" id="logoutBtn" class="btn-nav-login">Sign Out</a></li>
+      <li><a href="new-complaint.html">+ New Report</a></li>
+      <li><a href="login.html" id="logoutBtn" class="btn-nav-action">Sign Out</a></li>
     </ul>
   </nav>
 
-  <!-- Dashboard Main Content -->
+  <!-- Main Container -->
   <main class="main-content">
     
-    <div class="dashboard-header">
-      <div class="user-welcome">
-        <h2>Welcome, <span id="userNameDisplay">Loading...</span></h2>
-        <span>Logged in as: <strong id="userRoleDisplay" style="color: var(--primary-color);">...</strong> | University Portal</span>
+    <!-- User Welcome Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h1 style="font-family: var(--font-display); font-size: 1.85rem; font-weight: 800; color: #ffffff;">
+          Welcome, <span id="userNameDisplay" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">User</span>
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 4px;">
+          Access Role: <strong id="userRoleDisplay" class="badge-glass badge-assigned">STUDENT</strong> | Campus Facilities Overview
+        </p>
       </div>
+
       <div style="display: flex; gap: 10px;">
         <button id="btnRefresh" class="btn btn-outline btn-sm">🔄 Refresh</button>
-        <a href="new-complaint.html" class="btn btn-primary">+ Report New Issue</a>
+        <a href="new-complaint.html" class="btn btn-primary">+ Report Maintenance Issue</a>
       </div>
     </div>
 
-    <!-- Status Milestone Cards -->
-    <div class="status-grid">
-      <div class="stat-card all">
-        <h4>Total Submitted</h4>
-        <div class="number" id="statTotal">0</div>
+    <!-- Live Glass Metric Cards -->
+    <div class="stats-grid">
+      <div class="stat-glass-card all">
+        <div class="stat-info">
+          <h4>Total Reports</h4>
+          <div class="stat-number" id="statTotal">0</div>
+        </div>
+        <div class="stat-icon" style="color: var(--primary);">📋</div>
       </div>
-      <div class="stat-card pending">
-        <h4>Pending Review</h4>
-        <div class="number" id="statPending">0</div>
+
+      <div class="stat-glass-card pending">
+        <div class="stat-info">
+          <h4>Pending Review</h4>
+          <div class="stat-number" id="statPending" style="color: #fbbf24;">0</div>
+        </div>
+        <div class="stat-icon" style="color: var(--warning);">⏳</div>
       </div>
-      <div class="stat-card in-progress">
-        <h4>In Progress / Assigned</h4>
-        <div class="number" id="statInProgress">0</div>
+
+      <div class="stat-glass-card in-progress">
+        <div class="stat-info">
+          <h4>In Progress</h4>
+          <div class="stat-number" id="statInProgress" style="color: #38bdf8;">0</div>
+        </div>
+        <div class="stat-icon" style="color: var(--secondary);">🔧</div>
       </div>
-      <div class="stat-card resolved">
-        <h4>Resolved</h4>
-        <div class="number" id="statResolved">0</div>
+
+      <div class="stat-glass-card resolved">
+        <div class="stat-info">
+          <h4>Resolved</h4>
+          <div class="stat-number" id="statResolved" style="color: #34d399;">0</div>
+        </div>
+        <div class="stat-icon" style="color: var(--success);">✅</div>
       </div>
     </div>
 
-    <!-- Filter Tabs & Title -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
-      <h3 style="color: var(--primary-color);" id="tableTitle">Maintenance Complaints Overview</h3>
-      <div class="filter-tabs">
-        <button class="filter-tab active" data-filter="ALL">All (<span id="countAll">0</span>)</button>
-        <button class="filter-tab" data-filter="PENDING">Pending (<span id="countPending">0</span>)</button>
-        <button class="filter-tab" data-filter="IN_PROGRESS">In Progress (<span id="countInProgress">0</span>)</button>
-        <button class="filter-tab" data-filter="RESOLVED">Resolved (<span id="countResolved">0</span>)</button>
+    <!-- Controls Bar (Search + Filter Tabs) -->
+    <div class="table-controls-bar">
+      <div class="search-filter-box">
+        <input 
+          type="text" 
+          id="complaintSearchInput" 
+          class="glass-search-input" 
+          placeholder="Search by Room, Category, or Description..." 
+        />
+      </div>
+
+      <div class="filter-pills">
+        <button class="filter-pill active" data-filter="ALL">All Reports (<span id="countAll">0</span>)</button>
+        <button class="filter-pill" data-filter="PENDING">Pending (<span id="countPending">0</span>)</button>
+        <button class="filter-pill" data-filter="IN_PROGRESS">In Progress (<span id="countInProgress">0</span>)</button>
+        <button class="filter-pill" data-filter="RESOLVED">Resolved (<span id="countResolved">0</span>)</button>
       </div>
     </div>
 
-    <!-- Complaints Table -->
-    <div style="overflow-x: auto;">
-      <table class="complaint-table">
+    <!-- Complaints Glass Table -->
+    <div class="table-glass-wrapper">
+      <table class="glass-table">
         <thead>
           <tr>
             <th>ID</th>
             <th>Category</th>
             <th>Location</th>
-            <th>Description</th>
+            <th>Issue Details</th>
             <th>Priority</th>
             <th>Status</th>
-            <th>Date</th>
+            <th>Submitted</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody id="complaintsTableBody">
           <tr>
-            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-              Connecting to database & loading complaints...
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+              Connecting to Supabase PostgreSQL database...
             </td>
           </tr>
         </tbody>
@@ -142,7 +130,7 @@
   <div class="modal-overlay" id="editModal">
     <div class="modal-box">
       <div class="modal-header">
-        <h3>Edit Complaint Details</h3>
+        <h3 style="font-family: var(--font-display); font-size: 1.3rem;">Edit Ticket Details</h3>
         <button type="button" class="modal-close" id="btnModalClose">&times;</button>
       </div>
 
@@ -150,15 +138,15 @@
         <input type="hidden" id="editComplaintId" />
 
         <div class="form-group">
-          <label>Complaint Location & Category</label>
-          <div id="editComplaintMeta" style="font-weight: 600; color: var(--primary-color); padding: 8px; background: #f8fafc; border-radius: 4px;">
+          <label class="form-label">Location & Category</label>
+          <div id="editComplaintMeta" style="font-weight: 600; color: var(--primary-light); padding: 10px 14px; background: rgba(255, 255, 255, 0.05); border-radius: var(--radius-sm); border: 1px solid var(--glass-border);">
             ...
           </div>
         </div>
 
         <div class="form-group">
-          <label for="editPriority">Priority</label>
-          <select id="editPriority" class="form-control" required>
+          <label class="form-label" for="editPriority">Urgency / Priority</label>
+          <select id="editPriority" class="form-control-glass" required>
             <option value="LOW">Low</option>
             <option value="MEDIUM">Medium</option>
             <option value="HIGH">High</option>
@@ -167,17 +155,20 @@
         </div>
 
         <div class="form-group">
-          <label for="editDescription">Description</label>
-          <textarea id="editDescription" class="form-control" rows="3" required></textarea>
+          <label class="form-label" for="editDescription">Issue Description</label>
+          <textarea id="editDescription" class="form-control-glass" rows="3" required></textarea>
         </div>
 
-        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.5rem;">
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.75rem;">
           <button type="button" class="btn btn-outline" id="btnModalCancel">Cancel</button>
           <button type="submit" class="btn btn-primary" id="btnSaveEdit">Save Changes</button>
         </div>
       </form>
     </div>
   </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
 
   <!-- Footer -->
   <footer>

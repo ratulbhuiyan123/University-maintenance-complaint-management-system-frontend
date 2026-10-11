@@ -1,6 +1,5 @@
 /**
- * Main Application Logic & API Connect (CP-2)
- * University Maintenance & Complaint Management System
+ * CampusCare — Clean & Simple Frontend Controller (CP-2)
  */
 
 const API_URL = 'http://localhost:5000/api';
@@ -8,17 +7,52 @@ const API_URL = 'http://localhost:5000/api';
 // Cached metadata
 let cachedMetadata = {
   buildings: [],
+  rooms: [],
   categories: []
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('Campus Maintenance Portal Loaded [CP-2].');
+let selectedRoomIds = [];
+let selectedCategoryIds = [];
+let allComplaints = [];
 
+// ==========================================
+// TOAST NOTIFICATION
+// ==========================================
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  if (!container) {
+    alert(message);
+    return;
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  const icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️');
+
+  toast.innerHTML = `
+    <span style="font-size: 1.2rem;">${icon}</span>
+    <span style="flex: 1;">${message}</span>
+  `;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+    toast.style.transition = 'all 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+// ==========================================
+// INITIALIZATION
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
   const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
   const currentUser = userStr ? JSON.parse(userStr) : null;
 
-  // Highlight active link in navbar
+  // Active Navbar Link
   const currentPath = window.location.pathname;
   document.querySelectorAll('.nav-links a').forEach(link => {
     if (link.getAttribute('href') && currentPath.endsWith(link.getAttribute('href'))) {
@@ -26,46 +60,63 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ================= 1. LOGIN FORM =================
+  // User Info & Logout
+  const navUserBadge = document.getElementById('navUserBadge');
+  if (navUserBadge && currentUser) {
+    navUserBadge.style.display = 'inline-block';
+    navUserBadge.textContent = `👤 ${currentUser.name || 'User'} (${(currentUser.role || 'STUDENT').toUpperCase()})`;
+  }
+
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn && token) {
+    logoutBtn.textContent = 'Sign Out';
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'login.html';
+    });
+  }
+
+  // 1. LOGIN
   const loginForm = document.getElementById('loginForm');
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
-      const submitBtn = loginForm.querySelector('button[type="submit"]');
+      const btn = loginForm.querySelector('button[type="submit"]');
 
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Signing in...';
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ Signing in...</span>';
 
       try {
-        const response = await fetch(`${API_URL}/auth/login`, {
+        const res = await fetch(`${API_URL}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
-        const data = await response.json();
+        const data = await res.json();
 
-        if (response.ok && data.status === 'success') {
+        if (res.ok && data.status === 'success') {
           localStorage.setItem('token', data.data.token);
           localStorage.setItem('user', JSON.stringify(data.data.user));
-          alert(`Login successful! Welcome, ${data.data.user.name}`);
-          window.location.href = 'dashboard.html';
+          showToast(`Welcome back, ${data.data.user.name}!`, 'success');
+          setTimeout(() => window.location.href = 'dashboard.html', 700);
         } else {
-          alert(data.message || 'Incorrect email or password.');
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Sign In';
+          showToast(data.message || 'Invalid email or password.', 'error');
+          btn.disabled = false;
+          btn.innerHTML = 'Sign In';
         }
       } catch (err) {
-        console.error('Login error:', err);
-        alert('Server connection error! Ensure backend is running (npm run dev).');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Sign In';
+        showToast('Cannot connect to backend server.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = 'Sign In';
       }
     });
   }
 
-  // ================= 2. REGISTER FORM =================
+  // 2. REGISTER
   const registerForm = document.getElementById('registerForm');
   if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
@@ -75,451 +126,1002 @@ document.addEventListener('DOMContentLoaded', () => {
       const password = document.getElementById('regPassword').value;
       const role = document.getElementById('regRole').value;
       const phone = document.getElementById('regPhone').value.trim();
-      const submitBtn = registerForm.querySelector('button[type="submit"]');
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Creating Account...';
 
       try {
-        const response = await fetch(`${API_URL}/auth/register`, {
+        const res = await fetch(`${API_URL}/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, password, role, phone: phone || null })
         });
-        const data = await response.json();
+        const data = await res.json();
 
-        if (response.ok && data.status === 'success') {
-          alert('Registration successful! Please sign in with your new credentials.');
-          window.location.href = 'login.html';
+        if (res.ok && data.status === 'success') {
+          showToast('Account created! Please sign in.', 'success');
+          setTimeout(() => window.location.href = 'login.html', 1000);
         } else {
-          alert(data.message || 'Registration failed.');
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Register Account';
+          showToast(data.message || 'Registration failed.', 'error');
         }
       } catch (err) {
-        console.error('Register error:', err);
-        alert('Server connection error! Ensure backend is running.');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Register Account';
+        showToast('Server connection failed.', 'error');
       }
     });
   }
 
-  // ================= 3. MULTI-LOCATION COMPLAINT FORM (CP-2 CORE) =================
-  const multiForm = document.getElementById('multiLocationComplaintForm');
-  if (multiForm) {
-    if (!token || !currentUser) {
-      alert('Please log in first to submit a complaint.');
+  // 3. DASHBOARD
+  if (document.getElementById('complaintsTableBody')) {
+    if (!token) {
       window.location.href = 'login.html';
       return;
     }
 
-    initMultiLocationForm(token);
-  }
-
-  // ================= 4. DASHBOARD PAGE =================
-  const isDashboard = window.location.pathname.endsWith('dashboard.html');
-  if (isDashboard) {
-    if (!token || !currentUser) {
-      alert('Please sign in to access the Dashboard.');
-      window.location.href = 'login.html';
-      return;
+    if (currentUser) {
+      const nameEl = document.getElementById('userNameDisplay');
+      const roleEl = document.getElementById('userRoleDisplay');
+      if (nameEl) nameEl.textContent = currentUser.name || 'User';
+      if (roleEl) roleEl.textContent = (currentUser.role || 'STUDENT').toUpperCase();
     }
 
-    const userNameElem = document.getElementById('userNameDisplay');
-    const userRoleElem = document.getElementById('userRoleDisplay');
-    if (userNameElem) userNameElem.textContent = currentUser.name;
-    if (userRoleElem) userRoleElem.textContent = currentUser.role;
+    fetchAndDisplayComplaints(token, currentUser);
 
-    initDashboard(token, currentUser);
+    const btnRefresh = document.getElementById('btnRefresh');
+    if (btnRefresh) {
+      btnRefresh.addEventListener('click', () => fetchAndDisplayComplaints(token, currentUser));
+    }
+
+    initEditModal(token, currentUser);
   }
 
-  // ================= 5. LOGOUT =================
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      alert('You have been signed out.');
-      window.location.href = 'login.html';
-    });
+  // 4. REPORT FORM (MULTI-ROOM & MULTI-CATEGORY)
+  const reportForm = document.getElementById('singleMultiComplaintForm') || document.getElementById('multiLocationComplaintForm');
+  if (reportForm) {
+    if (!token) {
+      showToast('Please log in first.', 'error');
+      setTimeout(() => window.location.href = 'login.html', 1000);
+      return;
+    }
+    initReportForm(token, reportForm);
   }
 });
 
-// =========================================================================
-// CP-2: DYNAMIC MULTI-LOCATION & ISSUE CATEGORY MANAGEMENT
-// =========================================================================
+// ==========================================
+// CLEAN REPORT FORM CONTROLLER (ENHANCED UI WITH 7 FLOORS & SLICING)
+// ==========================================
+async function initReportForm(token, form) {
+  const btnSubmit = document.getElementById('btnSubmitReport') || form.querySelector('button[type="submit"]');
+  const btnReset = document.getElementById('btnResetForm');
+  const roomGrid = document.getElementById('roomSelectionGrid');
+  const catGrid = document.getElementById('categorySelectionGrid');
+  const roomFilterPills = document.getElementById('buildingFilterPills');
+  const floorFilterPills = document.getElementById('floorFilterPills');
+  const roomSearchInput = document.getElementById('roomSearchInput');
+  const roomSelectDropdown = document.getElementById('roomSelectDropdown');
+  const catSelectDropdown = document.getElementById('catSelectDropdown');
+  const btnAddRoomFromSelect = document.getElementById('btnAddRoomFromSelect');
+  const btnAddCatFromSelect = document.getElementById('btnAddCatFromSelect');
+  const btnRoomViewGrid = document.getElementById('btnRoomViewGrid');
+  const btnRoomViewSelect = document.getElementById('btnRoomViewSelect');
+  const btnCatViewGrid = document.getElementById('btnCatViewGrid');
+  const btnCatViewSelect = document.getElementById('btnCatViewSelect');
+  const roomGridModeWrap = document.getElementById('roomGridModeWrap');
+  const roomSelectModeWrap = document.getElementById('roomSelectModeWrap');
+  const catGridModeWrap = document.getElementById('catGridModeWrap');
+  const catSelectModeWrap = document.getElementById('catSelectModeWrap');
+  const btnShowMoreRooms = document.getElementById('btnShowMoreRooms');
+  const btnShowAllRooms = document.getElementById('btnShowAllRooms');
+  const roomSliceCounterText = document.getElementById('roomSliceCounterText');
+  const selectedRoomsBar = document.getElementById('selectedRoomsBar');
+  const selectedCatsBar = document.getElementById('selectedCatsBar');
+  const roomCountEl = document.getElementById('roomSelectedCount');
+  const catCountEl = document.getElementById('catSelectedCount');
+  const priorityInput = document.getElementById('reportPriority');
+  const priorityTiles = document.querySelectorAll('.priority-tile');
+  const descEl = document.getElementById('reportDescription');
+  const descCountEl = document.getElementById('descCharCount');
+  const photoEl = document.getElementById('reportPhotoUrl');
+  const photoWrap = document.getElementById('photoPreviewWrap');
+  const photoThumb = document.getElementById('photoPreviewThumb');
+  const photoText = document.getElementById('photoPreviewUrlText');
+  const btnSamplePhoto = document.getElementById('btnSamplePhoto');
+  const btnRemovePhoto = document.getElementById('btnRemovePhoto');
+  const summaryCalcText = document.getElementById('summaryCalculationText');
+  const summaryTicketsBadge = document.getElementById('summaryTotalTicketsBadge');
 
-let locationEntries = [];
-let locationCounter = 0;
+  let activeBuildingFilter = 'ALL';
+  let activeFloorFilter = 'ALL';
+  let currentRoomSlice = 12; // Slice 12 rooms at a time to prevent UI clutter
 
-async function initMultiLocationForm(token) {
-  const locationsList = document.getElementById('locationsList');
-  const btnAddLocation = document.getElementById('btnAddLocation');
-  const form = document.getElementById('multiLocationComplaintForm');
+  selectedRoomIds = [];
+  selectedCategoryIds = [];
 
-  // 1. Fetch metadata from backend
+  // Helper to extract floor number (1 to 7 or OTHER)
+  function getRoomFloor(room) {
+    const str = (room.RoomNumber || '').toString();
+    const match = str.match(/Room\s*([0-9]{3})/i) || str.match(/([0-9]{3})/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num >= 100 && num <= 199) return '1';
+      if (num >= 200 && num <= 299) return '2';
+      if (num >= 300 && num <= 399) return '3';
+      if (num >= 400 && num <= 499) return '4';
+      if (num >= 500 && num <= 599) return '5';
+      if (num >= 600 && num <= 699) return '6';
+      if (num >= 700 && num <= 799) return '7';
+    }
+    return 'OTHER';
+  }
+
+  // Helper to get category icon
+  function getCategoryIcon(name) {
+    const n = (name || '').toLowerCase();
+    if (n.includes('electric') || n.includes('light') || n.includes('fan') || n.includes('switch')) return '⚡';
+    if (n.includes('hvac') || n.includes('ac') || n.includes('cool') || n.includes('air')) return '❄️';
+    if (n.includes('it') || n.includes('network') || n.includes('wifi') || n.includes('router')) return '💻';
+    if (n.includes('multimedia') || n.includes('projector') || n.includes('av') || n.includes('sound')) return '📽️';
+    if (n.includes('plumb') || n.includes('washroom') || n.includes('drain')) return '💧';
+    if (n.includes('drink') || n.includes('purifier') || n.includes('cooler')) return '🚰';
+    if (n.includes('carpent') || n.includes('furniture') || n.includes('chair') || n.includes('desk')) return '🪑';
+    if (n.includes('civil') || n.includes('struct') || n.includes('door') || n.includes('window')) return '🚪';
+    if (n.includes('elevator') || n.includes('lift')) return '🛗';
+    if (n.includes('cctv') || n.includes('security') || n.includes('surveillance')) return '📹';
+    if (n.includes('fire') || n.includes('alarm') || n.includes('extinguish')) return '🧯';
+    if (n.includes('clean') || n.includes('housekeep') || n.includes('sanitat')) return '🧹';
+    if (n.includes('generator') || n.includes('ups') || n.includes('power')) return '🔋';
+    return '🛠️';
+  }
+
+  // 1. Fetch Metadata from API
   try {
     const res = await fetch(`${API_URL}/complaints/meta`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (res.ok) {
-      const json = await res.json();
-      cachedMetadata = json.data;
+      const data = await res.json();
+      cachedMetadata = data.data || {};
+
+      cachedMetadata.rooms = [];
+      if (Array.isArray(cachedMetadata.buildings)) {
+        cachedMetadata.buildings.forEach(b => {
+          if (Array.isArray(b.rooms)) {
+            b.rooms.forEach(r => {
+              cachedMetadata.rooms.push({
+                RoomID: r.RoomID,
+                RoomNumber: r.RoomNumber,
+                buildingName: b.Name,
+                displayName: `${b.Name} — ${r.RoomNumber}`
+              });
+            });
+          }
+        });
+      }
     }
   } catch (err) {
-    console.warn('Metadata fetch failed, using fallback data:', err);
+    console.error('Metadata load error:', err);
   }
 
-  // Fallback categories if server metadata is empty
-  if (!cachedMetadata.categories || cachedMetadata.categories.length === 0) {
+  // Fallback defaults with full 7 floors (70+ rooms) if API has fewer
+  if (!cachedMetadata.rooms || cachedMetadata.rooms.length < 20) {
+    const fallbackRooms = [];
+    const floorInfo = [
+      { floor: 1, label: 'Ground Floor', names: ['Lecture Hall 1A', 'Physics Lab 1', 'Chemistry Lab', 'Student Affairs', 'Medical Center', 'Classroom 106', 'Seminar Room A', 'Security Control', 'Staff Dining', 'Maintenance Desk'] },
+      { floor: 2, label: 'Level 2 (CSE)', names: ['Programming Lab 1', 'Programming Lab 2', 'Lecture Hall 2A', 'Circuit Lab', 'Faculty Room 2', 'Classroom 206', 'Classroom 207', 'NOC Center', 'Hardware Lab', 'Robotics Studio'] },
+      { floor: 3, label: 'Level 3 (Software & AI)', names: ['Lecture Hall 3A', 'Classroom 302', 'Classroom 303', 'AI & ML Lab', 'Cyber Security Lab', 'Software Eng Lab', 'VR & Graphics Studio', 'CSE Head Office', 'CSE Lounge', 'Discussion Hall'] },
+      { floor: 4, label: 'Level 4 (EEE)', names: ['Power Systems Lab', 'Microprocessor Lab', 'Lecture Hall 4A', 'Classroom 404', 'Classroom 405', 'DSP Lab', 'EEE Head Office', 'Telecom Lab', 'EEE Lounge', 'Graduate Lab'] },
+      { floor: 5, label: 'Level 5 (Civil & Arch)', names: ['Materials Lab', 'Hydraulics Lab', 'Lecture Hall 5A', 'Classroom 504', 'Classroom 505', 'GIS Lab', 'Design Studio 1', 'Model Workshop', 'Civil Head Office', 'Civil Lounge'] },
+      { floor: 6, label: 'Level 6 (Research & Dean)', names: ['Digital Library', 'Thesis Hall', 'Cloud Computing Lab', 'Classroom 604', 'Classroom 605', 'Big Data Center', 'Dean Office', 'Academic Council', 'Exam Office', 'Server Archive'] },
+      { floor: 7, label: 'Level 7 (Executive & Auditorium)', names: ['Grand Auditorium', 'Conference Hall', 'Trustees Board Room', 'VC Secretariat', 'Pro-VC Office', 'Syndicate Room', 'VIP Protocol Wing', 'Media Briefing Room', 'AV Broadcast Room', 'Rooftop Terrace'] }
+    ];
+
+    floorInfo.forEach(f => {
+      for (let i = 1; i <= 10; i++) {
+        const rId = f.floor * 100 + i;
+        fallbackRooms.push({
+          RoomID: rId,
+          RoomNumber: `Room ${rId} — ${f.names[i - 1]} (${f.label})`,
+          buildingName: 'Main Academic Building (7 Floors)',
+          displayName: `Main Academic — Room ${rId}`
+        });
+      }
+    });
+
+    // Library and sports
+    fallbackRooms.push(
+      { RoomID: 801, RoomNumber: 'Room 101-LIB — Main Circulation & Info Desk', buildingName: 'Central Library & ICT Complex', displayName: 'Library — Circulation Desk' },
+      { RoomID: 802, RoomNumber: 'Room 201-LIB — Central Silent Reading Hall', buildingName: 'Central Library & ICT Complex', displayName: 'Library — Reading Hall' },
+      { RoomID: 803, RoomNumber: 'Room 301-LIB — E-Library & Digital Wing', buildingName: 'Central Library & ICT Complex', displayName: 'Library — Digital Wing' },
+      { RoomID: 901, RoomNumber: 'Room 101-SAC — Indoor Sports Arena & Gymnasium', buildingName: 'Student Activity & Sports Complex', displayName: 'SAC — Gymnasium' },
+      { RoomID: 902, RoomNumber: 'Room 201-SAC — University Clubs Hub', buildingName: 'Student Activity & Sports Complex', displayName: 'SAC — Clubs Hub' }
+    );
+
+    cachedMetadata.rooms = fallbackRooms;
+  }
+
+  // Fallback categories if fewer than 10
+  if (!cachedMetadata.categories || cachedMetadata.categories.length < 10) {
     cachedMetadata.categories = [
-      { CategoryID: 1, Name: 'Electrical (AC, Fan, Lights, Projector)' },
-      { CategoryID: 2, Name: 'IT & Network (Wi-Fi, Lab PC, Router)' },
-      { CategoryID: 3, Name: 'Plumbing (Water line, Restroom)' },
-      { CategoryID: 4, Name: 'Carpentry & Furniture (Desk, Door, Chair)' }
+      { CategoryID: 1, Name: 'Electrical (Lights, Fans, Switches, Wiring)' },
+      { CategoryID: 2, Name: 'HVAC & Air Conditioning (Cooling, Leakage, Filters)' },
+      { CategoryID: 3, Name: 'IT & Network (Wi-Fi, LAN, Routers, Speed)' },
+      { CategoryID: 4, Name: 'Multimedia & AV (Projectors, Smartboards, Sound, Mics)' },
+      { CategoryID: 5, Name: 'Plumbing & Water (Washroom, Taps, Leakage, Drainage)' },
+      { CategoryID: 6, Name: 'Drinking Water & Purifiers (Coolers, Filters, Dispensers)' },
+      { CategoryID: 7, Name: 'Carpentry & Furniture (Desks, Benches, Chairs, Podiums)' },
+      { CategoryID: 8, Name: 'Civil & Structural (Doors, Locks, Windows, Glass, Walls)' },
+      { CategoryID: 9, Name: 'Elevator & Lift Maintenance' },
+      { CategoryID: 10, Name: 'Security & Surveillance (CCTV, Access Card, Gates)' },
+      { CategoryID: 11, Name: 'Fire & Safety Systems (Extinguishers, Alarms, Emergency Lights)' },
+      { CategoryID: 12, Name: 'Housekeeping & Sanitation (Deep Cleaning, Pest Control, Waste)' },
+      { CategoryID: 13, Name: 'Power Backup & Generator (UPS, Generator, Voltage Stabilizer)' }
     ];
   }
 
-  // Fallback buildings & rooms if empty
-  if (!cachedMetadata.buildings || cachedMetadata.buildings.length === 0) {
-    cachedMetadata.buildings = [
-      {
-        BuildingID: 1,
-        Name: 'Academic Building 1',
-        rooms: [{ RoomID: 101, RoomNumber: 'Lab-302' }, { RoomID: 103, RoomNumber: 'Room-204' }]
-      },
-      {
-        BuildingID: 2,
-        Name: 'Central Library',
-        rooms: [{ RoomID: 102, RoomNumber: 'Reading-Room-A' }]
-      }
-    ];
+  // 2. View Mode Switcher Handlers
+  if (btnRoomViewGrid && btnRoomViewSelect && roomGridModeWrap && roomSelectModeWrap) {
+    btnRoomViewGrid.addEventListener('click', () => {
+      btnRoomViewGrid.classList.add('active');
+      btnRoomViewSelect.classList.remove('active');
+      roomGridModeWrap.style.display = 'block';
+      roomSelectModeWrap.classList.remove('active');
+    });
+
+    btnRoomViewSelect.addEventListener('click', () => {
+      btnRoomViewSelect.classList.add('active');
+      btnRoomViewGrid.classList.remove('active');
+      roomGridModeWrap.style.display = 'none';
+      roomSelectModeWrap.classList.add('active');
+    });
   }
 
-  // 2. Add initial location card
-  addLocationCard();
+  if (btnCatViewGrid && btnCatViewSelect && catGridModeWrap && catSelectModeWrap) {
+    btnCatViewGrid.addEventListener('click', () => {
+      btnCatViewGrid.classList.add('active');
+      btnCatViewSelect.classList.remove('active');
+      catGridModeWrap.style.display = 'block';
+      catSelectModeWrap.classList.remove('active');
+    });
 
-  // 3. Add location event listener
-  btnAddLocation.addEventListener('click', () => {
-    addLocationCard();
-  });
+    btnCatViewSelect.addEventListener('click', () => {
+      btnCatViewSelect.classList.add('active');
+      btnCatViewGrid.classList.remove('active');
+      catGridModeWrap.style.display = 'none';
+      catSelectModeWrap.classList.add('active');
+    });
+  }
 
-  // 4. Handle Form Submission
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  // 3. Populate Select Dropdowns
+  function populateSelectDropdowns() {
+    // Room Select Dropdown with Optgroups
+    if (roomSelectDropdown) {
+      const groups = {
+        '1': 'Floor 1 (Ground Floor — Rooms 101 to 110)',
+        '2': 'Floor 2 (CSE & Labs — Rooms 201 to 210)',
+        '3': 'Floor 3 (Software & AI — Rooms 301 to 310)',
+        '4': 'Floor 4 (EEE & Telecom — Rooms 401 to 410)',
+        '5': 'Floor 5 (Civil & Arch — Rooms 501 to 510)',
+        '6': 'Floor 6 (Research & Dean — Rooms 601 to 610)',
+        '7': 'Floor 7 (Executive & Auditorium — Rooms 701 to 710)',
+        'OTHER': 'Central Library & Student Complex'
+      };
 
-    // Validation: Check all cards
-    const payloadItems = [];
-    const usedRooms = new Set();
-
-    for (let i = 0; i < locationEntries.length; i++) {
-      const entry = locationEntries[i];
-      const cardElem = document.getElementById(`loc-card-${entry.id}`);
-      if (!cardElem) continue;
-
-      const roomSelect = cardElem.querySelector('.room-select');
-      const prioritySelect = cardElem.querySelector('.priority-select');
-      const descInput = cardElem.querySelector('.desc-input');
-
-      const roomId = Number(roomSelect.value);
-      const priority = prioritySelect.value;
-      const description = descInput.value.trim();
-
-      if (!roomId) {
-        alert(`Please select a Room / Location for Location #${i + 1}.`);
-        roomSelect.focus();
-        return;
-      }
-
-      if (usedRooms.has(roomId)) {
-        alert(`Duplicate room detected! You have selected the same room in multiple location cards.`);
-        roomSelect.focus();
-        return;
-      }
-      usedRooms.add(roomId);
-
-      if (entry.categories.length === 0) {
-        alert(`Please select at least one Issue Category for Location #${i + 1}.`);
-        return;
-      }
-
-      if (!description) {
-        alert(`Please provide a description of the issue for Location #${i + 1}.`);
-        descInput.focus();
-        return;
-      }
-
-      payloadItems.push({
-        roomId,
-        categoryIds: entry.categories,
-        priority,
-        description
+      let html = '<option value="">-- Click to choose a room from directory --</option>';
+      Object.keys(groups).forEach(key => {
+        const floorRooms = cachedMetadata.rooms.filter(r => getRoomFloor(r) === key);
+        if (floorRooms.length > 0) {
+          html += `<optgroup label="${groups[key]}">`;
+          floorRooms.forEach(r => {
+            html += `<option value="${r.RoomID}">${r.RoomNumber}</option>`;
+          });
+          html += '</optgroup>';
+        }
       });
+      roomSelectDropdown.innerHTML = html;
     }
 
-    if (payloadItems.length === 0) {
-      alert('Please add at least one valid location entry.');
+    // Category Select Dropdown
+    if (catSelectDropdown) {
+      let html = '<option value="">-- Click to choose an issue category --</option>';
+      cachedMetadata.categories.forEach(cat => {
+        const icon = getCategoryIcon(cat.Name);
+        html += `<option value="${cat.CategoryID}">${icon} ${cat.Name}</option>`;
+      });
+      catSelectDropdown.innerHTML = html;
+    }
+  }
+
+  // Add from Select Buttons
+  if (btnAddRoomFromSelect && roomSelectDropdown) {
+    btnAddRoomFromSelect.addEventListener('click', () => {
+      const val = Number(roomSelectDropdown.value);
+      if (!val) {
+        showToast('Please select a room from the dropdown first.', 'info');
+        return;
+      }
+      if (!selectedRoomIds.includes(val)) {
+        selectedRoomIds.push(val);
+        renderRoomGrid();
+        updateSelectedRoomsBar();
+        updateSummary();
+        showToast('Room added to selection.', 'success');
+      } else {
+        showToast('This room is already selected.', 'info');
+      }
+      roomSelectDropdown.value = '';
+    });
+  }
+
+  if (btnAddCatFromSelect && catSelectDropdown) {
+    btnAddCatFromSelect.addEventListener('click', () => {
+      const val = Number(catSelectDropdown.value);
+      if (!val) {
+        showToast('Please select a category from the dropdown first.', 'info');
+        return;
+      }
+      if (!selectedCategoryIds.includes(val)) {
+        selectedCategoryIds.push(val);
+        renderCategoryGrid();
+        updateSelectedCatsBar();
+        updateSummary();
+        showToast('Category added to selection.', 'success');
+      } else {
+        showToast('This category is already selected.', 'info');
+      }
+      catSelectDropdown.value = '';
+    });
+  }
+
+  // 4. Render Building Filter Tabs
+  function renderBuildingFilters() {
+    if (!roomFilterPills) return;
+    const buildings = Array.from(new Set(cachedMetadata.rooms.map(r => r.buildingName || 'Main Campus')));
+    let html = `<button type="button" class="building-pill ${activeBuildingFilter === 'ALL' ? 'active' : ''}" data-bldg="ALL">🏢 All Buildings</button>`;
+    buildings.forEach(b => {
+      html += `<button type="button" class="building-pill ${activeBuildingFilter === b ? 'active' : ''}" data-bldg="${b}">🏛️ ${b}</button>`;
+    });
+    roomFilterPills.innerHTML = html;
+
+    roomFilterPills.querySelectorAll('.building-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        activeBuildingFilter = pill.getAttribute('data-bldg');
+        currentRoomSlice = 12; // Reset slice on filter change
+        roomFilterPills.querySelectorAll('.building-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        renderRoomGrid();
+      });
+    });
+  }
+
+  // 5. Floor Filter Pill Handlers
+  if (floorFilterPills) {
+    floorFilterPills.querySelectorAll('.floor-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        activeFloorFilter = pill.getAttribute('data-floor');
+        currentRoomSlice = 12; // Reset slice on floor change
+        floorFilterPills.querySelectorAll('.floor-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        renderRoomGrid();
+      });
+    });
+  }
+
+  // 6. Render Room Grid with Slicing & Search
+  function renderRoomGrid() {
+    if (!roomGrid) return;
+    const query = (roomSearchInput ? roomSearchInput.value : '').toLowerCase().trim();
+
+    const filtered = cachedMetadata.rooms.filter(room => {
+      const matchBldg = (activeBuildingFilter === 'ALL') || (room.buildingName === activeBuildingFilter);
+      const matchFloor = (activeFloorFilter === 'ALL') || (getRoomFloor(room) === activeFloorFilter);
+      const matchSearch = !query || 
+        (room.RoomNumber && room.RoomNumber.toLowerCase().includes(query)) ||
+        (room.displayName && room.displayName.toLowerCase().includes(query)) ||
+        (room.buildingName && room.buildingName.toLowerCase().includes(query));
+      return matchBldg && matchFloor && matchSearch;
+    });
+
+    // Update slicing counter & controls
+    const totalFiltered = filtered.length;
+    const visibleRooms = filtered.slice(0, currentRoomSlice);
+
+    if (roomSliceCounterText) {
+      if (totalFiltered === 0) {
+        roomSliceCounterText.textContent = 'No matching rooms';
+      } else {
+        roomSliceCounterText.textContent = `Showing 1–${Math.min(currentRoomSlice, totalFiltered)} of ${totalFiltered} rooms`;
+      }
+    }
+
+    if (btnShowMoreRooms) {
+      btnShowMoreRooms.style.display = (currentRoomSlice < totalFiltered) ? 'inline-block' : 'none';
+    }
+
+    if (filtered.length === 0) {
+      roomGrid.innerHTML = '<div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-dim);">No rooms match your search and filter criteria.</div>';
       return;
     }
 
-    const generalDescription = document.getElementById('generalDescription').value.trim();
-    const photoUrl = document.getElementById('generalPhotoUrl').value.trim();
-    const submitBtn = document.getElementById('btnSubmitAll');
+    roomGrid.innerHTML = visibleRooms.map(room => {
+      const isSelected = selectedRoomIds.includes(room.RoomID);
+      const floorNum = getRoomFloor(room);
+      const floorTag = floorNum !== 'OTHER' ? `Floor ${floorNum}` : 'Campus Wing';
+      return `
+        <div class="room-card-select ${isSelected ? 'selected' : ''}" data-id="${room.RoomID}">
+          <div class="room-card-info">
+            <span class="room-card-num">${room.RoomNumber}</span>
+            <span class="room-card-bldg">${room.buildingName || 'Main Campus'} &bull; ${floorTag}</span>
+          </div>
+          <div class="room-check-badge">${isSelected ? '✓' : ''}</div>
+        </div>
+      `;
+    }).join('');
 
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting Reports to Database...';
+    roomGrid.querySelectorAll('.room-card-select').forEach(card => {
+      card.addEventListener('click', () => {
+        const id = Number(card.getAttribute('data-id'));
+        const idx = selectedRoomIds.indexOf(id);
+        if (idx > -1) {
+          selectedRoomIds.splice(idx, 1);
+        } else {
+          selectedRoomIds.push(id);
+        }
+        renderRoomGrid();
+        updateSelectedRoomsBar();
+        updateSummary();
+      });
+    });
+  }
 
-    // Build array-of-objects payload
-    const payload = {
-      items: payloadItems,
-      generalDescription,
+  // Slicing buttons
+  if (btnShowMoreRooms) {
+    btnShowMoreRooms.addEventListener('click', () => {
+      currentRoomSlice += 12;
+      renderRoomGrid();
+    });
+  }
+
+  if (btnShowAllRooms) {
+    btnShowAllRooms.addEventListener('click', () => {
+      currentRoomSlice = 999;
+      renderRoomGrid();
+    });
+  }
+
+  // 7. Update Selected Rooms Chips Bar
+  function updateSelectedRoomsBar() {
+    if (roomCountEl) {
+      roomCountEl.textContent = `${selectedRoomIds.length} selected`;
+    }
+
+    if (!selectedRoomsBar) return;
+
+    if (selectedRoomIds.length === 0) {
+      selectedRoomsBar.innerHTML = '<span style="color: var(--text-dim); font-size: 0.82rem;">No rooms selected yet. Click rooms or choose from select option above.</span>';
+      return;
+    }
+
+    let html = selectedRoomIds.map(id => {
+      const room = cachedMetadata.rooms.find(r => r.RoomID === id);
+      const label = room ? `${room.RoomNumber}` : `Room #${id}`;
+      return `
+        <span class="selected-tag-chip" data-id="${id}">
+          📍 ${label}
+          <span class="selected-tag-remove" data-id="${id}">&times;</span>
+        </span>
+      `;
+    }).join('');
+
+    html += `
+      <button type="button" id="btnClearRooms" style="margin-left: auto; background: none; border: none; color: var(--text-dim); font-size: 0.78rem; cursor: pointer; text-decoration: underline;">
+        Clear rooms
+      </button>
+    `;
+
+    selectedRoomsBar.innerHTML = html;
+
+    selectedRoomsBar.querySelectorAll('.selected-tag-remove').forEach(rm => {
+      rm.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = Number(rm.getAttribute('data-id'));
+        const idx = selectedRoomIds.indexOf(id);
+        if (idx > -1) selectedRoomIds.splice(idx, 1);
+        renderRoomGrid();
+        updateSelectedRoomsBar();
+        updateSummary();
+      });
+    });
+
+    const btnClearRooms = document.getElementById('btnClearRooms');
+    if (btnClearRooms) {
+      btnClearRooms.addEventListener('click', () => {
+        selectedRoomIds = [];
+        renderRoomGrid();
+        updateSelectedRoomsBar();
+        updateSummary();
+      });
+    }
+  }
+
+  // 8. Render Category Tiles Grid
+  function renderCategoryGrid() {
+    if (!catGrid) return;
+
+    catGrid.innerHTML = cachedMetadata.categories.map(cat => {
+      const isSelected = selectedCategoryIds.includes(cat.CategoryID);
+      const icon = getCategoryIcon(cat.Name);
+      return `
+        <div class="category-card-select ${isSelected ? 'selected' : ''}" data-id="${cat.CategoryID}">
+          <div class="category-icon-box">${icon}</div>
+          <div class="category-card-name">${cat.Name}</div>
+          <div class="room-check-badge">${isSelected ? '✓' : ''}</div>
+        </div>
+      `;
+    }).join('');
+
+    catGrid.querySelectorAll('.category-card-select').forEach(card => {
+      card.addEventListener('click', () => {
+        const id = Number(card.getAttribute('data-id'));
+        const idx = selectedCategoryIds.indexOf(id);
+        if (idx > -1) {
+          selectedCategoryIds.splice(idx, 1);
+        } else {
+          selectedCategoryIds.push(id);
+        }
+        renderCategoryGrid();
+        updateSelectedCatsBar();
+        updateSummary();
+      });
+    });
+  }
+
+  // 9. Update Selected Categories Chips Bar
+  function updateSelectedCatsBar() {
+    if (catCountEl) {
+      catCountEl.textContent = `${selectedCategoryIds.length} selected`;
+    }
+
+    if (!selectedCatsBar) return;
+
+    if (selectedCategoryIds.length === 0) {
+      selectedCatsBar.innerHTML = '<span style="color: var(--text-dim); font-size: 0.82rem;">No categories selected yet. Click cards or use dropdown above.</span>';
+      return;
+    }
+
+    let html = selectedCategoryIds.map(id => {
+      const cat = cachedMetadata.categories.find(c => c.CategoryID === id);
+      const name = cat ? cat.Name : `Category #${id}`;
+      return `
+        <span class="selected-tag-chip cat" data-id="${id}">
+          🏷️ ${name}
+          <span class="selected-tag-remove" data-id="${id}">&times;</span>
+        </span>
+      `;
+    }).join('');
+
+    html += `
+      <button type="button" id="btnClearCats" style="margin-left: auto; background: none; border: none; color: var(--text-dim); font-size: 0.78rem; cursor: pointer; text-decoration: underline;">
+        Clear categories
+      </button>
+    `;
+
+    selectedCatsBar.innerHTML = html;
+
+    selectedCatsBar.querySelectorAll('.selected-tag-remove').forEach(rm => {
+      rm.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = Number(rm.getAttribute('data-id'));
+        const idx = selectedCategoryIds.indexOf(id);
+        if (idx > -1) selectedCategoryIds.splice(idx, 1);
+        renderCategoryGrid();
+        updateSelectedCatsBar();
+        updateSummary();
+      });
+    });
+
+    const btnClearCats = document.getElementById('btnClearCats');
+    if (btnClearCats) {
+      btnClearCats.addEventListener('click', () => {
+        selectedCategoryIds = [];
+        renderCategoryGrid();
+        updateSelectedCatsBar();
+        updateSummary();
+      });
+    }
+  }
+
+  // 10. Priority Tiles Selection
+  priorityTiles.forEach(tile => {
+    tile.addEventListener('click', () => {
+      priorityTiles.forEach(t => t.classList.remove('selected'));
+      tile.classList.add('selected');
+      if (priorityInput) {
+        priorityInput.value = tile.getAttribute('data-priority');
+      }
+    });
+  });
+
+  // 11. Description Helpers & Character Counter
+  if (descEl && descCountEl) {
+    descEl.addEventListener('input', () => {
+      descCountEl.textContent = `${descEl.value.length} / 500`;
+    });
+  }
+
+  document.querySelectorAll('.quick-phrase-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const phrase = chip.getAttribute('data-phrase');
+      if (!descEl) return;
+      if (descEl.value.trim().length > 0) {
+        descEl.value = descEl.value.trim() + ' — ' + phrase;
+      } else {
+        descEl.value = phrase;
+      }
+      descEl.dispatchEvent(new Event('input'));
+      descEl.focus();
+    });
+  });
+
+  // 12. Photo Preview & Sample Photo
+  function handlePhotoPreview(url) {
+    if (!photoWrap || !photoThumb || !photoText) return;
+    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+      photoThumb.src = url;
+      photoText.textContent = url.length > 45 ? url.substring(0, 42) + '...' : url;
+      photoWrap.classList.add('visible');
+    } else {
+      photoWrap.classList.remove('visible');
+      photoThumb.src = '';
+      photoText.textContent = '';
+    }
+  }
+
+  if (photoEl) {
+    photoEl.addEventListener('input', () => handlePhotoPreview(photoEl.value.trim()));
+  }
+
+  if (btnSamplePhoto && photoEl) {
+    btnSamplePhoto.addEventListener('click', () => {
+      const sampleUrl = 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80';
+      photoEl.value = sampleUrl;
+      handlePhotoPreview(sampleUrl);
+      showToast('Sample photo URL inserted.', 'info');
+    });
+  }
+
+  if (btnRemovePhoto && photoEl) {
+    btnRemovePhoto.addEventListener('click', () => {
+      photoEl.value = '';
+      handlePhotoPreview('');
+    });
+  }
+
+  // 13. Summary Calculation
+  function updateSummary() {
+    const rCount = selectedRoomIds.length;
+    const cCount = selectedCategoryIds.length;
+    const total = rCount * cCount;
+
+    if (summaryTicketsBadge) {
+      summaryTicketsBadge.textContent = `${total} Ticket${total === 1 ? '' : 's'}`;
+    }
+
+    if (summaryCalcText) {
+      if (total === 0) {
+        summaryCalcText.textContent = 'Select at least 1 room and 1 category to generate tickets.';
+      } else {
+        summaryCalcText.innerHTML = `
+          Logging <strong>${rCount} room${rCount === 1 ? '' : 's'}</strong> &times; 
+          <strong>${cCount} category${cCount === 1 ? '' : 'ies'}</strong> = 
+          <span style="color: var(--primary-light); font-weight: 700;">${total} maintenance ticket${total === 1 ? '' : 's'}</span> will be created.
+        `;
+      }
+    }
+  }
+
+  // Search Input Handler (resets slice on search)
+  if (roomSearchInput) {
+    roomSearchInput.addEventListener('input', () => {
+      currentRoomSlice = 12;
+      renderRoomGrid();
+    });
+  }
+
+  // Reset Form
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      selectedRoomIds = [];
+      selectedCategoryIds = [];
+      if (descEl) descEl.value = '';
+      if (descCountEl) descCountEl.textContent = '0 / 500';
+      if (photoEl) photoEl.value = '';
+      handlePhotoPreview('');
+      priorityTiles.forEach(t => t.classList.remove('selected'));
+      const medTile = document.querySelector('.priority-tile[data-priority="MEDIUM"]');
+      if (medTile) medTile.classList.add('selected');
+      if (priorityInput) priorityInput.value = 'MEDIUM';
+      currentRoomSlice = 12;
+      renderRoomGrid();
+      updateSelectedRoomsBar();
+      renderCategoryGrid();
+      updateSelectedCatsBar();
+      updateSummary();
+      showToast('Form has been cleared.', 'info');
+    });
+  }
+
+  // Initial Renders
+  populateSelectDropdowns();
+  renderBuildingFilters();
+  renderRoomGrid();
+  updateSelectedRoomsBar();
+  renderCategoryGrid();
+  updateSelectedCatsBar();
+  updateSummary();
+
+  // 14. SUBMIT HANDLER
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (selectedRoomIds.length === 0) {
+      showToast('Please select at least one Room / Location.', 'error');
+      const step1 = document.querySelector('.report-step-card');
+      if (step1) step1.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+
+    if (selectedCategoryIds.length === 0) {
+      showToast('Please select at least one Issue Category.', 'error');
+      const step2 = document.querySelectorAll('.report-step-card')[1];
+      if (step2) step2.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+
+    const priority = priorityInput ? priorityInput.value : 'MEDIUM';
+    const description = descEl ? descEl.value.trim() : '';
+    const photoUrl = photoEl ? photoEl.value.trim() : '';
+
+    if (!description) {
+      showToast('Please provide an issue description.', 'error');
+      if (descEl) descEl.focus();
+      return;
+    }
+
+    // Build items payload
+    const items = selectedRoomIds.map(roomId => ({
+      roomId: Number(roomId),
+      categoryIds: selectedCategoryIds.map(Number),
+      priority,
+      description,
       photoUrl: photoUrl || null
-    };
+    }));
 
-    console.log('Submitting CP-2 Payload:', payload);
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<span>⏳ Submitting Tickets...</span>';
 
     try {
-      const response = await fetch(`${API_URL}/complaints`, {
+      const res = await fetch(`${API_URL}/complaints`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          items,
+          photoUrl: photoUrl || null,
+          generalDescription: description
+        })
       });
 
-      const result = await response.json();
+      const result = await res.json();
 
-      if (response.ok && result.status === 'success') {
-        const count = result.data.count || payloadItems.length;
-        alert(`🎉 Success! ${count} maintenance complaint(s) successfully recorded in Supabase database.`);
-        window.location.href = 'dashboard.html';
+      if (res.ok && result.status === 'success') {
+        const total = selectedRoomIds.length * selectedCategoryIds.length;
+        showToast(`🎉 Successfully created ${total} maintenance ticket(s)!`, 'success');
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 1200);
       } else {
-        alert(result.message || 'Failed to submit complaint reports.');
-        submitBtn.disabled = false;
-        submitBtn.textContent = '🚀 Submit Maintenance Report';
+        const errorMsg = result.message || 'Submission failed. Please check form data.';
+        showToast(errorMsg, 'error');
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '🚀 Submit Maintenance Report';
       }
     } catch (err) {
-      console.error('Submit error:', err);
-      alert('Error submitting report to backend API. Please verify server status.');
-      submitBtn.disabled = false;
-      submitBtn.textContent = '🚀 Submit Maintenance Report';
+      console.error('Submission error:', err);
+      showToast('Server connection failed. Is backend running?', 'error');
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = '🚀 Submit Maintenance Report';
     }
   });
 }
 
-function addLocationCard() {
-  locationCounter++;
-  const entryId = locationCounter;
-  const entryState = {
-    id: entryId,
-    categories: []
-  };
-  locationEntries.push(entryState);
+// ==========================================
+// DASHBOARD CONTROLLER (CRUD)
+// ==========================================
+async function fetchAndDisplayComplaints(token, currentUser) {
+  const tbody = document.getElementById('complaintsTableBody');
+  if (!tbody) return;
 
-  const container = document.getElementById('locationsList');
-  const card = document.createElement('div');
-  card.className = 'location-card';
-  card.id = `loc-card-${entryId}`;
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">Loading complaints...</td></tr>';
 
-  // Render Card HTML
-  card.innerHTML = `
-    <div class="location-card-header">
-      <div class="location-card-title">
-        <span>📍 Location Entry</span>
-        <span class="location-badge card-number-badge">#${locationEntries.length}</span>
-      </div>
-      <button type="button" class="btn btn-danger btn-sm btn-remove-location" title="Remove this location">
-        ✖ Remove Location
-      </button>
-    </div>
+  try {
+    const res = await fetch(`${API_URL}/complaints`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const result = await res.json();
 
-    <!-- Location / Room Selection -->
-    <div class="form-group">
-      <label>Location / Room Number <span style="color: var(--danger);">*</span></label>
-      <select class="form-control room-select" required>
-        <option value="" disabled selected>-- Select Location / Room --</option>
-        ${renderRoomOptions()}
-      </select>
-    </div>
-
-    <!-- Dynamic Issue Categories -->
-    <div class="form-group">
-      <label>
-        Issue Category (Select all that apply) <span style="color: var(--danger);">*</span>
-      </label>
-      <div class="category-chips-container" id="chips-${entryId}">
-        ${renderCategoryChips(entryId)}
-      </div>
-      <small style="color: var(--text-muted); display: block; margin-top: 4px;">
-        Click to toggle multiple categories for this location.
-      </small>
-    </div>
-
-    <!-- Urgency / Priority -->
-    <div class="form-group">
-      <label>Urgency Level</label>
-      <select class="form-control priority-select" required>
-        <option value="LOW">Low (Minor inconvenience)</option>
-        <option value="MEDIUM" selected>Medium (Standard maintenance)</option>
-        <option value="HIGH">High (Disrupting class / activities)</option>
-        <option value="URGENT">Urgent (Safety hazard or complete room outage)</option>
-      </select>
-    </div>
-
-    <!-- Specific Room Description -->
-    <div class="form-group" style="margin-bottom: 0;">
-      <label>Issue Description for this Location <span style="color: var(--danger);">*</span></label>
-      <textarea 
-        class="form-control desc-input" 
-        rows="2" 
-        placeholder="e.g. Projector power cord sparking and 2 front tube lights dead..."
-        required
-      ></textarea>
-    </div>
-  `;
-
-  container.appendChild(card);
-
-  // Attach chip click listeners
-  attachChipListeners(card, entryState);
-
-  // Attach remove listener
-  const btnRemove = card.querySelector('.btn-remove-location');
-  btnRemove.addEventListener('click', () => {
-    removeLocationCard(entryId);
-  });
-
-  updateLocationNumbers();
+    if (res.ok && result.status === 'success') {
+      allComplaints = result.data.complaints || [];
+      updateDashboardStats(allComplaints);
+      renderComplaintsTable(allComplaints, token, currentUser);
+      initSearchAndFilter(allComplaints, token, currentUser);
+    } else {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 2rem;">${result.message || 'Error'}</td></tr>`;
+    }
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 2rem;">Backend server disconnected</td></tr>';
+  }
 }
 
-function removeLocationCard(entryId) {
-  if (locationEntries.length <= 1) {
-    alert('At least one location entry is required in your maintenance report.');
+function updateDashboardStats(complaints) {
+  const total = complaints.length;
+  const pending = complaints.filter(c => (c.Status || '').toUpperCase() === 'PENDING').length;
+  const inProgress = complaints.filter(c => (c.Status || '').toUpperCase() === 'IN_PROGRESS' || (c.Status || '').toUpperCase() === 'ASSIGNED').length;
+  const resolved = complaints.filter(c => (c.Status || '').toUpperCase() === 'RESOLVED').length;
+
+  const elTotal = document.getElementById('statTotal');
+  const elPending = document.getElementById('statPending');
+  const elProgress = document.getElementById('statInProgress');
+  const elResolved = document.getElementById('statResolved');
+
+  if (elTotal) elTotal.textContent = total;
+  if (elPending) elPending.textContent = pending;
+  if (elProgress) elProgress.textContent = inProgress;
+  if (elResolved) elResolved.textContent = resolved;
+
+  const cAll = document.getElementById('countAll');
+  const cPend = document.getElementById('countPending');
+  const cProg = document.getElementById('countInProgress');
+  const cRes = document.getElementById('countResolved');
+
+  if (cAll) cAll.textContent = total;
+  if (cPend) cPend.textContent = pending;
+  if (cProg) cProg.textContent = inProgress;
+  if (cRes) cRes.textContent = resolved;
+}
+
+function initSearchAndFilter(complaints, token, currentUser) {
+  const searchInput = document.getElementById('complaintSearchInput');
+  const pills = document.querySelectorAll('.filter-pill');
+  let currentFilter = 'ALL';
+
+  function applyFilter() {
+    const q = (searchInput ? searchInput.value : '').toLowerCase().trim();
+    
+    const filtered = complaints.filter(c => {
+      const status = (c.Status || '').toUpperCase();
+      const matchesFilter = (currentFilter === 'ALL') || 
+        (currentFilter === 'PENDING' && status === 'PENDING') ||
+        (currentFilter === 'IN_PROGRESS' && (status === 'IN_PROGRESS' || status === 'ASSIGNED')) ||
+        (currentFilter === 'RESOLVED' && status === 'RESOLVED');
+
+      if (!matchesFilter) return false;
+      if (!q) return true;
+
+      const roomName = c.room ? `${c.room.building ? c.room.building.Name : ''} ${c.room.RoomNumber}`.toLowerCase() : '';
+      const catName = c.category ? c.category.Name.toLowerCase() : '';
+      const desc = (c.Description || '').toLowerCase();
+      const id = String(c.ComplaintID);
+
+      return roomName.includes(q) || catName.includes(q) || desc.includes(q) || id.includes(q);
+    });
+
+    renderComplaintsTable(filtered, token, currentUser);
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', applyFilter);
+  }
+
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      pills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      currentFilter = pill.getAttribute('data-filter');
+      applyFilter();
+    });
+  });
+}
+
+function renderComplaintsTable(complaints, token, currentUser) {
+  const tbody = document.getElementById('complaintsTableBody');
+  if (!tbody) return;
+
+  if (complaints.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📭</div>
+          <p>No maintenance reports found.</p>
+          <a href="new-complaint.html" class="btn btn-outline btn-sm" style="margin-top: 10px;">+ Create Report</a>
+        </td>
+      </tr>
+    `;
     return;
   }
 
-  const cardElem = document.getElementById(`loc-card-${entryId}`);
-  if (cardElem) cardElem.remove();
+  tbody.innerHTML = complaints.map(c => {
+    const status = (c.Status || 'PENDING').toUpperCase();
+    let badgeClass = 'badge-pending';
+    if (status === 'IN_PROGRESS' || status === 'ASSIGNED') badgeClass = 'badge-in-progress';
+    if (status === 'RESOLVED') badgeClass = 'badge-resolved';
 
-  locationEntries = locationEntries.filter(e => e.id !== entryId);
-  updateLocationNumbers();
-}
+    const location = c.room ? `${c.room.building ? c.room.building.Name + ' — ' : ''}Room ${c.room.RoomNumber}` : `Room #${c.RoomID}`;
+    const category = c.category ? c.category.Name : 'General';
+    const date = c.CreatedAt ? new Date(c.CreatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
 
-function updateLocationNumbers() {
-  const cards = document.querySelectorAll('#locationsList .location-card');
-  cards.forEach((c, idx) => {
-    const badge = c.querySelector('.card-number-badge');
-    if (badge) badge.textContent = `#${idx + 1}`;
-
-    const removeBtn = c.querySelector('.btn-remove-location');
-    if (removeBtn) {
-      removeBtn.style.display = cards.length > 1 ? 'inline-flex' : 'none';
+    let actionBtns = '';
+    if (status === 'PENDING') {
+      actionBtns = `
+        <button class="btn btn-outline btn-sm btn-edit-ticket" data-id="${c.ComplaintID}" title="Edit Ticket">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm btn-delete-ticket" data-id="${c.ComplaintID}" title="Delete Ticket">🗑️ Delete</button>
+      `;
+    } else {
+      actionBtns = '<span style="color: var(--text-dim); font-size: 0.8rem;">Locked</span>';
     }
-  });
-}
 
-function renderRoomOptions() {
-  let html = '';
-  if (cachedMetadata.buildings && cachedMetadata.buildings.length > 0) {
-    cachedMetadata.buildings.forEach(b => {
-      html += `<optgroup label="${b.Name}">`;
-      if (b.rooms && b.rooms.length > 0) {
-        b.rooms.forEach(r => {
-          html += `<option value="${r.RoomID}">${b.Name} - ${r.RoomNumber}</option>`;
-        });
-      }
-      html += `</optgroup>`;
-    });
-  } else {
-    html += `<option value="101">Academic Building 1 - Lab-302</option>`;
-    html += `<option value="102">Central Library - Reading-Room-A</option>`;
-  }
-  return html;
-}
-
-function renderCategoryChips(entryId) {
-  const categories = cachedMetadata.categories || [];
-  return categories.map(cat => {
     return `
-      <div class="category-chip" data-cat-id="${cat.CategoryID}">
-        <span class="check-icon">⬜</span>
-        <span>${cat.Name}</span>
-      </div>
+      <tr>
+        <td><strong style="color: #ffffff;">#${c.ComplaintID}</strong></td>
+        <td>${category}</td>
+        <td><span style="color: #ffffff; font-weight: 500;">${location}</span></td>
+        <td style="max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.Description}">${c.Description}</td>
+        <td><strong style="color: ${c.Priority === 'URGENT' || c.Priority === 'HIGH' ? 'var(--danger)' : 'var(--text-secondary)'};">${c.Priority || 'MEDIUM'}</strong></td>
+        <td><span class="badge-glass ${badgeClass}">${status}</span></td>
+        <td style="color: var(--text-muted);">${date}</td>
+        <td><div style="display: flex; gap: 6px;">${actionBtns}</div></td>
+      </tr>
     `;
   }).join('');
-}
 
-function attachChipListeners(cardElem, entryState) {
-  const chips = cardElem.querySelectorAll('.category-chip');
-  chips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      const catId = Number(chip.getAttribute('data-cat-id'));
-      const isSelected = chip.classList.contains('selected');
+  // Edit Listeners
+  tbody.querySelectorAll('.btn-edit-ticket').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.getAttribute('data-id'));
+      const item = allComplaints.find(c => c.ComplaintID === id);
+      if (item) openEditModal(item);
+    });
+  });
 
-      if (isSelected) {
-        chip.classList.remove('selected');
-        chip.querySelector('.check-icon').textContent = '⬜';
-        entryState.categories = entryState.categories.filter(id => id !== catId);
-      } else {
-        chip.classList.add('selected');
-        chip.querySelector('.check-icon').textContent = '✅';
-        if (!entryState.categories.includes(catId)) {
-          entryState.categories.push(catId);
-        }
+  // Delete Listeners
+  tbody.querySelectorAll('.btn-delete-ticket').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = Number(btn.getAttribute('data-id'));
+      if (confirm(`Delete Ticket #${id}? This operation cannot be undone.`)) {
+        await executeDeleteComplaint(id, token, currentUser);
       }
     });
   });
 }
 
-// =========================================================================
-// CP-2: DASHBOARD CRUD OPERATIONS (READ, UPDATE, DELETE)
-// =========================================================================
+function initEditModal(token, currentUser) {
+  const modal = document.getElementById('editModal');
+  const btnClose = document.getElementById('btnModalClose');
+  const btnCancel = document.getElementById('btnModalCancel');
+  const form = document.getElementById('editComplaintForm');
 
-let allComplaintsData = [];
-let currentFilter = 'ALL';
+  if (!modal) return;
 
-async function initDashboard(token, currentUser) {
-  await loadComplaints(token, currentUser);
-
-  // Refresh button
-  const btnRefresh = document.getElementById('btnRefresh');
-  if (btnRefresh) {
-    btnRefresh.addEventListener('click', () => loadComplaints(token, currentUser));
+  function closeModal() {
+    modal.classList.remove('active');
   }
 
-  // Filter tabs
-  document.querySelectorAll('.filter-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      currentFilter = tab.getAttribute('data-filter');
-      renderComplaintsTable(token, currentUser);
-    });
-  });
+  if (btnClose) btnClose.addEventListener('click', closeModal);
+  if (btnCancel) btnCancel.addEventListener('click', closeModal);
 
-  // Modal Close buttons
-  const editModal = document.getElementById('editModal');
-  const btnModalClose = document.getElementById('btnModalClose');
-  const btnModalCancel = document.getElementById('btnModalCancel');
-  const editForm = document.getElementById('editComplaintForm');
-
-  if (btnModalClose) btnModalClose.addEventListener('click', () => editModal.classList.remove('active'));
-  if (btnModalCancel) btnModalCancel.addEventListener('click', () => editModal.classList.remove('active'));
-
-  // Save Edit Complaint Form
-  if (editForm) {
-    editForm.addEventListener('submit', async (e) => {
+  if (form) {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('editComplaintId').value;
       const description = document.getElementById('editDescription').value.trim();
       const priority = document.getElementById('editPriority').value;
-      const btnSave = document.getElementById('btnSaveEdit');
-
-      btnSave.disabled = true;
-      btnSave.textContent = 'Saving...';
 
       try {
         const res = await fetch(`${API_URL}/complaints/${id}`, {
@@ -533,204 +1135,46 @@ async function initDashboard(token, currentUser) {
         const result = await res.json();
 
         if (res.ok && result.status === 'success') {
-          alert('Complaint updated successfully!');
-          editModal.classList.remove('active');
-          await loadComplaints(token, currentUser);
+          showToast(`Ticket #${id} updated successfully!`, 'success');
+          closeModal();
+          await fetchAndDisplayComplaints(token, currentUser);
         } else {
-          alert(result.message || 'Failed to update complaint.');
+          showToast(result.message || 'Update failed.', 'error');
         }
       } catch (err) {
-        console.error('Update error:', err);
-        alert('Server error updating complaint.');
-      } finally {
-        btnSave.disabled = false;
-        btnSave.textContent = 'Save Changes';
+        showToast('Server error while saving changes.', 'error');
       }
     });
   }
 }
 
-async function loadComplaints(token, currentUser) {
-  const tbody = document.getElementById('complaintsTableBody');
-  tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">Connecting to database & loading complaints...</td></tr>';
-
-  let endpoint = `${API_URL}/complaints/my-complaints`;
-  const tableTitle = document.getElementById('tableTitle');
-
-  if (currentUser.role === 'ADMIN') {
-    endpoint = `${API_URL}/admin/complaints`;
-    if (tableTitle) tableTitle.textContent = 'Campus Complaints Registry (Admin Full View)';
-  } else if (currentUser.role === 'STAFF') {
-    endpoint = `${API_URL}/staff/complaints`;
-    if (tableTitle) tableTitle.textContent = 'Assigned Maintenance Tasks';
-  }
-
-  try {
-    const res = await fetch(endpoint, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const result = await res.json();
-
-    if (!res.ok || result.status !== 'success') {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 2rem;">Error: ${result.message || 'Failed to load complaints'}</td></tr>`;
-      return;
-    }
-
-    allComplaintsData = result.data.complaints || [];
-
-    // Calculate Counts
-    let pending = 0;
-    let inProgress = 0;
-    let resolved = 0;
-
-    allComplaintsData.forEach(c => {
-      const s = (c.Status || '').toUpperCase();
-      if (s === 'PENDING') pending++;
-      else if (s === 'IN_PROGRESS' || s === 'ASSIGNED') inProgress++;
-      else if (s === 'RESOLVED') resolved++;
-    });
-
-    const statTotal = document.getElementById('statTotal');
-    const statPending = document.getElementById('statPending');
-    const statInProgress = document.getElementById('statInProgress');
-    const statResolved = document.getElementById('statResolved');
-
-    if (statTotal) statTotal.textContent = allComplaintsData.length;
-    if (statPending) statPending.textContent = pending;
-    if (statInProgress) statInProgress.textContent = inProgress;
-    if (statResolved) statResolved.textContent = resolved;
-
-    const countAll = document.getElementById('countAll');
-    const countPending = document.getElementById('countPending');
-    const countInProgress = document.getElementById('countInProgress');
-    const countResolved = document.getElementById('countResolved');
-
-    if (countAll) countAll.textContent = allComplaintsData.length;
-    if (countPending) countPending.textContent = pending;
-    if (countInProgress) countInProgress.textContent = inProgress;
-    if (countResolved) countResolved.textContent = resolved;
-
-    renderComplaintsTable(token, currentUser);
-
-  } catch (err) {
-    console.error('Fetch complaints error:', err);
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 2rem;">Failed to connect to backend server. Make sure npm run dev is running on port 5000.</td></tr>';
-  }
-}
-
-function renderComplaintsTable(token, currentUser) {
-  const tbody = document.getElementById('complaintsTableBody');
-  let filtered = allComplaintsData;
-
-  if (currentFilter === 'PENDING') {
-    filtered = allComplaintsData.filter(c => (c.Status || '').toUpperCase() === 'PENDING');
-  } else if (currentFilter === 'IN_PROGRESS') {
-    filtered = allComplaintsData.filter(c => {
-      const s = (c.Status || '').toUpperCase();
-      return s === 'IN_PROGRESS' || s === 'ASSIGNED';
-    });
-  } else if (currentFilter === 'RESOLVED') {
-    filtered = allComplaintsData.filter(c => (c.Status || '').toUpperCase() === 'RESOLVED');
-  }
-
-  if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
-          No complaints found under filter "<strong>${currentFilter}</strong>". Click <strong><a href="new-complaint.html" style="color: var(--primary-color);">+ Report New Issue</a></strong> to submit.
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = filtered.map(c => {
-    const status = (c.Status || 'PENDING').toUpperCase();
-    const statusBadgeClass = `badge-${status.toLowerCase()}`;
-    const location = c.room ? `${c.room.building ? c.room.building.Name + ', ' : ''}${c.room.RoomNumber}` : `Room #${c.RoomID}`;
-    const category = c.category ? c.category.Name : `Category #${c.CategoryID}`;
-    const date = c.CreatedAt ? new Date(c.CreatedAt).toLocaleDateString() : 'N/A';
-    const isPending = status === 'PENDING';
-
-    let actionButtons = '';
-    // Student can Edit/Delete if PENDING; Admin can always Edit/Delete
-    if ((currentUser.role === 'STUDENT' && isPending) || currentUser.role === 'ADMIN') {
-      actionButtons = `
-        <button class="btn btn-outline btn-sm btn-edit" data-id="${c.ComplaintID}" title="Edit Description/Priority">✏️ Edit</button>
-        <button class="btn btn-danger btn-sm btn-delete" data-id="${c.ComplaintID}" title="Delete/Cancel Complaint">🗑️ Delete</button>
-      `;
-    } else {
-      actionButtons = `<span style="color: var(--text-muted); font-size: 0.8rem;">🔒 Locked</span>`;
-    }
-
-    return `
-      <tr>
-        <td><strong>#${c.ComplaintID}</strong></td>
-        <td>${category}</td>
-        <td>${location}</td>
-        <td>${c.Description}</td>
-        <td><strong style="color: ${c.Priority === 'URGENT' || c.Priority === 'HIGH' ? 'var(--danger)' : 'var(--text-dark)'};">${c.Priority || 'MEDIUM'}</strong></td>
-        <td><span class="badge ${statusBadgeClass}">${status}</span></td>
-        <td>${date}</td>
-        <td><div class="actions-cell">${actionButtons}</div></td>
-      </tr>
-    `;
-  }).join('');
-
-  // Attach Edit Listeners
-  tbody.querySelectorAll('.btn-edit').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = Number(btn.getAttribute('data-id'));
-      const complaint = allComplaintsData.find(c => c.ComplaintID === id);
-      if (complaint) openEditModal(complaint);
-    });
-  });
-
-  // Attach Delete Listeners
-  tbody.querySelectorAll('.btn-delete').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = Number(btn.getAttribute('data-id'));
-      if (confirm(`Are you sure you want to delete / cancel Complaint #${id}?`)) {
-        await deleteComplaint(id, token, currentUser);
-      }
-    });
-  });
-}
-
-function openEditModal(complaint) {
+function openEditModal(c) {
   const modal = document.getElementById('editModal');
-  const idInput = document.getElementById('editComplaintId');
-  const metaDisplay = document.getElementById('editComplaintMeta');
-  const descInput = document.getElementById('editDescription');
-  const prioritySelect = document.getElementById('editPriority');
-
-  idInput.value = complaint.ComplaintID;
-  const roomName = complaint.room ? `${complaint.room.building ? complaint.room.building.Name + ' - ' : ''}${complaint.room.RoomNumber}` : `Room #${complaint.RoomID}`;
-  const catName = complaint.category ? complaint.category.Name : 'General';
-  metaDisplay.textContent = `Complaint #${complaint.ComplaintID} | ${roomName} | ${catName}`;
-
-  descInput.value = complaint.Description || '';
-  prioritySelect.value = (complaint.Priority || 'MEDIUM').toUpperCase();
+  document.getElementById('editComplaintId').value = c.ComplaintID;
+  const roomName = c.room ? `${c.room.building ? c.room.building.Name + ' — ' : ''}${c.room.RoomNumber}` : `Room #${c.RoomID}`;
+  const catName = c.category ? c.category.Name : 'General';
+  document.getElementById('editComplaintMeta').textContent = `Ticket #${c.ComplaintID} | ${roomName} | ${catName}`;
+  document.getElementById('editDescription').value = c.Description || '';
+  document.getElementById('editPriority').value = (c.Priority || 'MEDIUM').toUpperCase();
 
   modal.classList.add('active');
 }
 
-async function deleteComplaint(complaintId, token, currentUser) {
+async function executeDeleteComplaint(id, token, currentUser) {
   try {
-    const res = await fetch(`${API_URL}/complaints/${complaintId}`, {
+    const res = await fetch(`${API_URL}/complaints/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const result = await res.json();
 
     if (res.ok && result.status === 'success') {
-      alert(`Complaint #${complaintId} has been successfully deleted.`);
-      await loadComplaints(token, currentUser);
+      showToast(`Ticket #${id} deleted successfully.`, 'success');
+      await fetchAndDisplayComplaints(token, currentUser);
     } else {
-      alert(result.message || 'Failed to delete complaint.');
+      showToast(result.message || 'Deletion failed.', 'error');
     }
   } catch (err) {
-    console.error('Delete error:', err);
-    alert('Server error deleting complaint.');
+    showToast('Failed to delete ticket.', 'error');
   }
 }

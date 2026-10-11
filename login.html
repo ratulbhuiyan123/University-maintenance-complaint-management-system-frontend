@@ -1,73 +1,82 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign In - CampusCare</title>
+  <title>Sign In — CampusCare</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <!-- Top Navigation Bar -->
+  <!-- Top Glass Navigation Bar -->
   <nav class="navbar">
-    <div class="nav-brand">
-      <h2>🏛️ CampusCare</h2>
-      <span>Portal</span>
-    </div>
+    <a href="index.html" class="nav-brand">
+      <div class="nav-brand-icon">🏛️</div>
+      <div class="nav-brand-title">
+        <h2>CampusCare</h2>
+        <span>University Portal</span>
+      </div>
+    </a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="dashboard.html">Dashboard</a></li>
       <li><a href="register.html">Register</a></li>
-      <li><a href="login.html" class="btn-nav-login active">Sign In</a></li>
+      <li><a href="login.html" class="active btn-nav-action">Sign In</a></li>
     </ul>
   </nav>
 
-  <!-- Login Container -->
+  <!-- Auth Glass Container -->
   <main class="main-content">
-    <div class="auth-container">
-      <div class="auth-header">
-        <h2>Account Login</h2>
-        <p>Enter your university credentials to continue</p>
+    <div class="glass-panel" style="max-width: 480px; margin: 3rem auto;">
+      
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <div class="form-header-icon" style="margin: 0 auto 1rem auto;">🔐</div>
+        <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: #ffffff;">Welcome Back</h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 4px;">Sign in to your campus maintenance account</p>
       </div>
 
       <form id="loginForm">
         <div class="form-group">
-          <label for="email">Campus Email</label>
+          <label class="form-label" for="email">Campus Email</label>
           <input 
             type="email" 
             id="email" 
-            class="form-control" 
+            class="form-control-glass" 
             placeholder="e.g. student@campus.edu" 
             required 
           />
         </div>
 
         <div class="form-group">
-          <label for="password">Password</label>
+          <label class="form-label" for="password">Password</label>
           <input 
             type="password" 
             id="password" 
-            class="form-control" 
+            class="form-control-glass" 
             placeholder="••••••••" 
             required 
           />
         </div>
 
-        <button type="submit" class="btn btn-block">Sign In</button>
+        <button type="submit" class="btn btn-primary btn-block" style="padding: 13px; font-size: 1rem; margin-top: 0.5rem;">
+          Sign In
+        </button>
       </form>
 
-      <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem;">
-        <p>Don't have an account? <a href="register.html" style="color: var(--secondary-color); font-weight: 600;">Register here</a></p>
+      <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+        Don't have an account? <a href="register.html" style="color: var(--primary-light); font-weight: 600; text-decoration: none;">Register here</a>
       </div>
 
-      <div style="margin-top: 1.5rem; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 0.8rem; color: var(--text-muted); text-align: center;">
-        <p><strong>Demo Accounts (password: password123):</strong></p>
+      <div style="margin-top: 1.5rem; padding: 14px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--glass-border); border-radius: var(--radius-md); font-size: 0.8rem; color: var(--text-secondary); text-align: center;">
+        <p style="font-weight: 700; color: #ffffff; margin-bottom: 4px;">Test Accounts (password: password123):</p>
         <p>Student: <code>student@campus.edu</code> | Admin: <code>admin@campus.edu</code></p>
       </div>
+
     </div>
   </main>
 
-  <!-- Footer -->
+  <div class="toast-container" id="toastContainer"></div>
+
   <footer>
     <p>&copy; 2026 University Maintenance & Complaint Management System</p>
   </footer>

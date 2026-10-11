@@ -3,99 +3,319 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Report Maintenance Issue - CampusCare (CP-2)</title>
+  <title>Report Maintenance Issue — CampusCare</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏛️</text></svg>">
 </head>
 <body>
 
   <!-- Top Navigation Bar -->
   <nav class="navbar">
-    <div class="nav-brand">
-      <h2>🏛️ CampusCare</h2>
-      <span>Portal</span>
-    </div>
+    <a href="index.html" class="nav-brand">
+      <div class="nav-brand-icon">🏛️</div>
+      <div class="nav-brand-title">
+        <h2>CampusCare</h2>
+        <span>University Facility Portal</span>
+      </div>
+    </a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="dashboard.html">Dashboard</a></li>
-      <li><a href="new-complaint.html" class="active">+ New Complaint</a></li>
-      <li><a href="login.html" id="logoutBtn" class="btn-nav-login">Sign Out</a></li>
+      <li><a href="new-complaint.html" class="active">+ New Report</a></li>
+      <li>
+        <span id="navUserBadge" style="display: none; font-size: 0.85rem; color: var(--text-secondary); padding: 6px 12px; background: rgba(255,255,255,0.06); border-radius: var(--radius-full); border: 1px solid var(--glass-border);"></span>
+      </li>
+      <li><a href="login.html" id="logoutBtn" class="btn-nav-action">Sign In</a></li>
     </ul>
   </nav>
 
   <!-- Main Container -->
-  <main class="main-content">
-    <div style="max-width: 800px; margin: 0 auto;">
-      
-      <!-- Page Header -->
-      <div style="margin-bottom: 2rem;">
-        <h1 style="color: var(--primary-color); font-size: 1.8rem;">Report Maintenance Issue</h1>
-        <p style="color: var(--text-muted);">
-          Report one or multiple room issues in a single submission. Add rooms independently and choose specific categories for each location.
-        </p>
+  <main class="main-content" style="max-width: 1240px;">
+    
+    <!-- Breadcrumbs & Header -->
+    <div class="report-page-header">
+      <div class="report-breadcrumbs">
+        <a href="dashboard.html">Dashboard</a>
+        <span>/</span>
+        <span style="color: var(--text-main); font-weight: 600;">Report Maintenance Issue</span>
       </div>
 
-      <form id="multiLocationComplaintForm">
-
-        <!-- Dynamic Locations Container -->
-        <div id="locationsList">
-          <!-- Dynamic cards injected by app.js -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h1 style="font-family: var(--font-display); font-size: 2.1rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">
+            Report Maintenance Issue
+          </h1>
+          <p style="color: var(--text-secondary); font-size: 0.98rem; margin-top: 6px;">
+            Submit single or multi-room facility requests. Tickets are automatically dispatched to university maintenance staff.
+          </p>
         </div>
-
-        <!-- Add Location Button -->
-        <div style="margin-bottom: 2rem;">
-          <button type="button" id="btnAddLocation" class="btn btn-outline" style="width: 100%; border-style: dashed; padding: 14px; font-size: 1rem;">
-            ➕ Add Another Location / Room
-          </button>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-full); font-size: 0.82rem; color: #6ee7b7; font-weight: 600;">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block;"></span>
+          API Connected
         </div>
+      </div>
+    </div>
 
-        <!-- General Additional Details -->
-        <div class="location-card" style="border-left-color: var(--secondary-color);">
-          <h3 style="font-size: 1.1rem; color: var(--secondary-color); margin-bottom: 1rem;">
-            📷 Overall Attachments & Notes (Optional)
-          </h3>
+    <!-- Main Glass Form Container -->
+    <div class="glass-panel" style="padding: 2.2rem;">
+      <form id="singleMultiComplaintForm">
 
-          <div class="form-group">
-            <label for="generalPhotoUrl">Evidence / Photo URL</label>
-            <input 
-              type="url" 
-              id="generalPhotoUrl" 
-              class="form-control" 
-              placeholder="https://example.com/damage-photo.jpg" 
-            />
-            <small style="color: var(--text-muted);">Provide a cloud image link if you took a picture of the issue.</small>
+        <!-- STEP 1: SELECT ROOMS / LOCATIONS -->
+        <div class="report-step-card">
+          <div class="report-step-header">
+            <div class="report-step-title">
+              <div class="report-step-badge">1</div>
+              <h2>Select Room(s) & Location(s) <span style="color: var(--danger); font-size: 0.9rem;">*</span></h2>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <!-- View mode switcher: Grid vs Select Option -->
+              <div class="view-mode-tabs" id="roomViewModeTabs">
+                <button type="button" class="view-mode-btn active" id="btnRoomViewGrid">🔲 Cards View</button>
+                <button type="button" class="view-mode-btn" id="btnRoomViewSelect">📋 Select Option</button>
+              </div>
+              <div class="report-step-count" id="roomSelectedCount">0 selected</div>
+            </div>
           </div>
 
-          <div class="form-group" style="margin-bottom: 0;">
-            <label for="generalDescription">Overall Maintenance Summary</label>
+          <!-- Building filter tabs -->
+          <div class="building-filter-pills" id="buildingFilterPills">
+            <button type="button" class="building-pill active" data-bldg="ALL">🏢 All Buildings</button>
+          </div>
+
+          <!-- Floor Filter Tabs (7 Floors) -->
+          <div class="floor-filter-pills" id="floorFilterPills">
+            <button type="button" class="floor-pill active" data-floor="ALL">All Floors</button>
+            <button type="button" class="floor-pill" data-floor="1">1st Floor (101-110)</button>
+            <button type="button" class="floor-pill" data-floor="2">2nd Floor (201-210)</button>
+            <button type="button" class="floor-pill" data-floor="3">3rd Floor (301-310)</button>
+            <button type="button" class="floor-pill" data-floor="4">4th Floor (401-410)</button>
+            <button type="button" class="floor-pill" data-floor="5">5th Floor (501-510)</button>
+            <button type="button" class="floor-pill" data-floor="6">6th Floor (601-610)</button>
+            <button type="button" class="floor-pill" data-floor="7">7th Floor (701-710)</button>
+            <button type="button" class="floor-pill" data-floor="OTHER">Library & SAC</button>
+          </div>
+
+          <!-- Option 1: CLEAN SELECT DROPDOWN WRAPPER -->
+          <div class="select-mode-wrap" id="roomSelectModeWrap">
+            <label class="form-label" for="roomSelectDropdown">Choose from Campus Room Directory:</label>
+            <div class="select-row-flex">
+              <select id="roomSelectDropdown" class="form-control-glass" style="flex: 1;">
+                <option value="">-- Choose a room to add --</option>
+              </select>
+              <button type="button" id="btnAddRoomFromSelect" class="btn btn-secondary" style="white-space: nowrap; padding: 10px 18px;">
+                + Add Room
+              </button>
+            </div>
+          </div>
+
+          <!-- Option 2: SLICED GRID VIEW -->
+          <div id="roomGridModeWrap">
+            <!-- Room quick search -->
+            <div style="position: relative; margin-bottom: 0.85rem;">
+              <input 
+                type="text" 
+                id="roomSearchInput" 
+                class="form-control-glass" 
+                placeholder="🔍 Search rooms by number or name (e.g. 101, 302, Lab, Library, Hall)..." 
+                style="padding-left: 38px; font-size: 0.9rem;"
+              />
+              <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); opacity: 0.5;">🔍</span>
+            </div>
+
+            <!-- Sliced Room Grid -->
+            <div class="room-selection-grid" id="roomSelectionGrid">
+              <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-muted);">
+                ⏳ Loading campus locations...
+              </div>
+            </div>
+
+            <!-- Slicing / Pagination Controls Bar -->
+            <div class="slice-controls-bar" id="roomSliceControlsBar">
+              <span id="roomSliceCounterText">Showing 1–12 of rooms</span>
+              <div class="slice-btn-group">
+                <button type="button" class="btn-slice" id="btnShowMoreRooms">⬇ Show More (+12)</button>
+                <button type="button" class="btn-slice" id="btnShowAllRooms">Show All</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selected Room Chips Summary -->
+          <div class="selected-tags-bar" id="selectedRoomsBar">
+            <span style="color: var(--text-dim); font-size: 0.82rem;">No rooms selected yet. Click rooms or choose from select option above.</span>
+          </div>
+        </div>
+
+        <!-- STEP 2: SELECT CATEGORIES -->
+        <div class="report-step-card">
+          <div class="report-step-header">
+            <div class="report-step-title">
+              <div class="report-step-badge">2</div>
+              <h2>Select Issue Category(ies) <span style="color: var(--danger); font-size: 0.9rem;">*</span></h2>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="view-mode-tabs" id="catViewModeTabs">
+                <button type="button" class="view-mode-btn active" id="btnCatViewGrid">🏷️ Cards</button>
+                <button type="button" class="view-mode-btn" id="btnCatViewSelect">📋 Select</button>
+              </div>
+              <div class="report-step-count" id="catSelectedCount">0 selected</div>
+            </div>
+          </div>
+
+          <!-- Category Select Mode Option -->
+          <div class="select-mode-wrap" id="catSelectModeWrap">
+            <label class="form-label" for="catSelectDropdown">Choose from Category List:</label>
+            <div class="select-row-flex">
+              <select id="catSelectDropdown" class="form-control-glass" style="flex: 1;">
+                <option value="">-- Choose a category to add --</option>
+              </select>
+              <button type="button" id="btnAddCatFromSelect" class="btn btn-secondary" style="white-space: nowrap; padding: 10px 18px;">
+                + Add Category
+              </button>
+            </div>
+          </div>
+
+          <!-- Category Tiles Grid -->
+          <div id="catGridModeWrap">
+            <div class="category-selection-grid" id="categorySelectionGrid">
+              <div style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--text-muted);">
+                ⏳ Loading categories...
+              </div>
+            </div>
+          </div>
+
+          <!-- Selected Categories Chips Summary -->
+          <div class="selected-tags-bar" id="selectedCatsBar">
+            <span style="color: var(--text-dim); font-size: 0.82rem;">No categories selected yet. Click cards or use dropdown above.</span>
+          </div>
+        </div>
+
+        <!-- STEP 3: PRIORITY / URGENCY -->
+        <div class="report-step-card">
+          <div class="report-step-header">
+            <div class="report-step-title">
+              <div class="report-step-badge">3</div>
+              <h2>Select Urgency Level</h2>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-dim);">Affects dispatch queue</span>
+          </div>
+
+          <input type="hidden" id="reportPriority" value="MEDIUM">
+          <div class="priority-tiles-grid" id="priorityTilesGrid">
+            <div class="priority-tile" data-priority="LOW">
+              <div style="font-size: 1.4rem; margin-bottom: 4px;">🟢</div>
+              <div class="priority-tile-title">Low</div>
+              <div class="priority-tile-desc">Minor cosmetic / Routine</div>
+            </div>
+            <div class="priority-tile selected" data-priority="MEDIUM">
+              <div style="font-size: 1.4rem; margin-bottom: 4px;">🟡</div>
+              <div class="priority-tile-title">Medium</div>
+              <div class="priority-tile-desc">Standard maintenance</div>
+            </div>
+            <div class="priority-tile" data-priority="HIGH">
+              <div style="font-size: 1.4rem; margin-bottom: 4px;">🟠</div>
+              <div class="priority-tile-title">High</div>
+              <div class="priority-tile-desc">Disrupts classes or labs</div>
+            </div>
+            <div class="priority-tile" data-priority="URGENT">
+              <div style="font-size: 1.4rem; margin-bottom: 4px;">🔴</div>
+              <div class="priority-tile-title">Urgent</div>
+              <div class="priority-tile-desc">Safety hazard / Emergency</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: DETAILS & EVIDENCE -->
+        <div class="report-step-card">
+          <div class="report-step-header">
+            <div class="report-step-title">
+              <div class="report-step-badge">4</div>
+              <h2>Issue Details & Evidence</h2>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label class="form-label" for="reportDescription" style="display: flex; justify-content: space-between;">
+              <span>Detailed Description <span style="color: var(--danger);">*</span></span>
+              <span id="descCharCount" style="font-size: 0.78rem; color: var(--text-dim);">0 / 500</span>
+            </label>
             <textarea 
-              id="generalDescription" 
-              class="form-control" 
-              rows="2" 
-              placeholder="Any additional notes for technician staff (e.g. Please visit after 2:00 PM when classes finish)..."
+              id="reportDescription" 
+              class="form-control-glass" 
+              rows="4" 
+              placeholder="Please provide specific details about the issue (e.g. Overhead projector in 101 has dead bulb, ceiling AC is leaking water over student desks)..." 
+              maxlength="500"
+              required
             ></textarea>
           </div>
+
+          <!-- Photo / Evidence URL -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="reportPhotoUrl" style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Photo / Evidence Image URL (Optional)</span>
+              <button type="button" id="btnSamplePhoto" style="background: none; border: none; color: var(--primary-light); font-size: 0.78rem; cursor: pointer; text-decoration: underline;">
+                Insert sample photo
+              </button>
+            </label>
+            <input 
+              type="url" 
+              id="reportPhotoUrl" 
+              class="form-control-glass" 
+              placeholder="https://images.unsplash.com/photo-... or any valid image link" 
+            />
+            <div class="photo-preview-wrap" id="photoPreviewWrap">
+              <img id="photoPreviewThumb" class="photo-preview-thumb" src="" alt="Evidence Preview" />
+              <div style="flex: 1;">
+                <div style="font-size: 0.84rem; font-weight: 600; color: #ffffff;">Image attached</div>
+                <div style="font-size: 0.74rem; color: var(--text-dim);" id="photoPreviewUrlText"></div>
+              </div>
+              <button type="button" id="btnRemovePhoto" class="btn btn-sm btn-outline" style="padding: 4px 10px; font-size: 0.75rem;">Remove</button>
+            </div>
+          </div>
         </div>
 
-        <!-- Form Submission Actions -->
-        <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1.5rem;">
-          <button type="submit" id="btnSubmitAll" class="btn btn-primary" style="flex: 2; padding: 14px; font-size: 1.05rem;">
+        <!-- REAL-TIME SUMMARY BANNER -->
+        <div class="report-summary-banner" id="reportSummaryBanner">
+          <div class="report-summary-text">
+            <h4>Ready to Submit</h4>
+            <p id="summaryCalculationText">
+              Select at least 1 room and 1 category to generate tickets.
+            </p>
+          </div>
+          <div class="report-summary-count-badge" id="summaryTotalTicketsBadge">
+            0 Tickets
+          </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+          <button type="submit" id="btnSubmitReport" class="btn btn-primary" style="flex: 2; padding: 16px 30px; font-size: 1.05rem; letter-spacing: 0.3px;">
             🚀 Submit Maintenance Report
           </button>
-          <a href="dashboard.html" class="btn btn-outline" style="flex: 1; padding: 14px; text-align: center;">
+          <button type="button" id="btnResetForm" class="btn btn-outline" style="padding: 16px 20px;">
+            ↺ Reset
+          </button>
+          <a href="dashboard.html" class="btn btn-outline" style="padding: 16px 24px; text-decoration: none;">
             Cancel
           </a>
         </div>
 
       </form>
-
     </div>
+
   </main>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
 
   <!-- Footer -->
   <footer>
     <p>&copy; 2026 University Maintenance & Complaint Management System | CP-2 Implementation</p>
   </footer>
 
+  <script src="js/api.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

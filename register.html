@@ -1,97 +1,107 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Account - CampusCare</title>
+  <title>Create Account — CampusCare</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <!-- Top Navigation Bar -->
+  <!-- Top Glass Navigation Bar -->
   <nav class="navbar">
-    <div class="nav-brand">
-      <h2>🏛️ CampusCare</h2>
-      <span>Portal</span>
-    </div>
+    <a href="index.html" class="nav-brand">
+      <div class="nav-brand-icon">🏛️</div>
+      <div class="nav-brand-title">
+        <h2>CampusCare</h2>
+        <span>University Portal</span>
+      </div>
+    </a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="dashboard.html">Dashboard</a></li>
-      <li><a href="login.html" class="btn-nav-login">Sign In</a></li>
+      <li><a href="register.html" class="active">Register</a></li>
+      <li><a href="login.html" class="btn-nav-action">Sign In</a></li>
     </ul>
   </nav>
 
-  <!-- Register Container -->
+  <!-- Auth Glass Container -->
   <main class="main-content">
-    <div class="auth-container" style="max-width: 500px;">
-      <div class="auth-header">
-        <h2>Create an Account</h2>
-        <p>Register as a Student, Staff, or University Admin</p>
+    <div class="glass-panel" style="max-width: 520px; margin: 2rem auto;">
+      
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <div class="form-header-icon" style="margin: 0 auto 1rem auto;">📝</div>
+        <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: #ffffff;">Create Account</h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 4px;">Register for university facility management</p>
       </div>
 
       <form id="registerForm">
         <div class="form-group">
-          <label for="regName">Full Name</label>
+          <label class="form-label" for="regName">Full Name</label>
           <input 
             type="text" 
             id="regName" 
-            class="form-control" 
+            class="form-control-glass" 
             placeholder="e.g. Md. Ratul Bhuiyan" 
             required 
           />
         </div>
 
         <div class="form-group">
-          <label for="regEmail">Campus Email</label>
+          <label class="form-label" for="regEmail">Campus Email</label>
           <input 
             type="email" 
             id="regEmail" 
-            class="form-control" 
-            placeholder="e.g. yourname@campus.edu" 
+            class="form-control-glass" 
+            placeholder="e.g. student@campus.edu" 
             required 
           />
         </div>
 
         <div class="form-group">
-          <label for="regPassword">Password</label>
+          <label class="form-label" for="regPassword">Password</label>
           <input 
             type="password" 
             id="regPassword" 
-            class="form-control" 
+            class="form-control-glass" 
             placeholder="At least 6 characters" 
             required 
           />
         </div>
 
         <div class="form-group">
-          <label for="regRole">Account Role</label>
-          <select id="regRole" class="form-control" required>
-            <option value="STUDENT" selected>Student / Faculty (Report Issues)</option>
-            <option value="STAFF">Maintenance Staff (Resolve Issues)</option>
+          <label class="form-label" for="regRole">Role Designation</label>
+          <select id="regRole" class="form-control-glass" required>
+            <option value="STUDENT" selected>Student / Faculty (Report Maintenance)</option>
+            <option value="STAFF">Maintenance Technician (Resolve Tickets)</option>
             <option value="ADMIN">University Admin (Assign & Manage)</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label for="regPhone">Phone Number (Optional)</label>
+          <label class="form-label" for="regPhone">Phone Number (Optional)</label>
           <input 
             type="tel" 
             id="regPhone" 
-            class="form-control" 
+            class="form-control-glass" 
             placeholder="017XXXXXXXX" 
           />
         </div>
 
-        <button type="submit" class="btn btn-block" style="background-color: var(--secondary-color);">Register Account</button>
+        <button type="submit" class="btn btn-secondary btn-block" style="padding: 13px; font-size: 1rem; margin-top: 0.5rem;">
+          Register Account
+        </button>
       </form>
 
-      <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem;">
-        <p>Already have an account? <a href="login.html" style="color: var(--primary-color); font-weight: 600;">Sign in here</a></p>
+      <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+        Already registered? <a href="login.html" style="color: var(--secondary); font-weight: 600; text-decoration: none;">Sign in here</a>
       </div>
+
     </div>
   </main>
 
-  <!-- Footer -->
+  <div class="toast-container" id="toastContainer"></div>
+
   <footer>
     <p>&copy; 2026 University Maintenance & Complaint Management System</p>
   </footer>

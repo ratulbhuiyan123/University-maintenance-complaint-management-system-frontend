@@ -226,6 +226,7 @@ body {
   letter-spacing: -0.5px;
   background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   transition: all 0.3s ease;
 }
@@ -233,6 +234,7 @@ body {
 [data-theme="light"] .nav-brand h2 {
   background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -549,6 +551,7 @@ body {
   margin-bottom: 1.25rem;
   background: linear-gradient(135deg, #ffffff 30%, #93c5fd 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -2012,6 +2015,7 @@ footer {
 [data-theme="light"] .hero-glass h1 {
   background: linear-gradient(135deg, #0f172a 30%, #2563eb 100%) !important;
   -webkit-background-clip: text !important;
+  background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
 }
 

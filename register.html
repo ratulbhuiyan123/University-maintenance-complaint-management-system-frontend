@@ -1,10 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    (function() {
+      var theme = localStorage.getItem('campuscare-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+
+      var t = localStorage.getItem('token');
+      if (t && t !== 'null' && t !== 'undefined' && t.split('.').length === 3) {
+        document.documentElement.style.display = 'none';
+        window.location.replace('dashboard.html');
+      }
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Create Account — CampusCare</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏛️</text></svg>">
 </head>
 <body>
 
@@ -14,14 +27,37 @@
       <div class="nav-brand-icon">🏛️</div>
       <div class="nav-brand-title">
         <h2>CampusCare</h2>
-        <span>University Portal</span>
+        <span>University Facility Portal</span>
       </div>
     </a>
-    <ul class="nav-links">
+
+    <!-- Mobile Header Actions (Theme + Hamburger) -->
+    <div class="nav-mobile-actions">
+      <button type="button" class="theme-toggle-btn" id="themeToggleBtnMobile" title="Switch Theme" aria-label="Toggle theme">
+        <span class="theme-icon">🌙</span>
+      </button>
+      <button type="button" class="nav-hamburger-btn" id="navHamburgerBtn" title="Toggle navigation menu" aria-label="Toggle navigation menu" aria-expanded="false">
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+      </button>
+    </div>
+
+    <!-- Navigation Links -->
+    <ul class="nav-links" id="navLinks">
       <li><a href="index.html">Home</a></li>
       <li><a href="dashboard.html">Dashboard</a></li>
-      <li><a href="register.html" class="active">Register</a></li>
-      <li><a href="login.html" class="btn-nav-action">Sign In</a></li>
+      <li><a href="new-complaint.html">+ New Report</a></li>
+      <li class="nav-theme-desktop">
+        <button type="button" class="theme-toggle-btn" id="themeToggleBtn" title="Switch Theme" aria-label="Toggle theme">
+          <span class="theme-icon">🌙</span>
+          <span class="theme-label">Dark</span>
+        </button>
+      </li>
+      <li>
+        <span id="navUserBadge" style="display: none;"></span>
+      </li>
+      <li><a href="login.html" id="logoutBtn" class="btn-nav-action">Sign In</a></li>
     </ul>
   </nav>
 
@@ -31,7 +67,7 @@
       
       <div style="text-align: center; margin-bottom: 2rem;">
         <div class="form-header-icon" style="margin: 0 auto 1rem auto;">📝</div>
-        <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: #ffffff;">Create Account</h1>
+        <h1 style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: var(--text-main);">Create Account</h1>
         <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 4px;">Register for university facility management</p>
       </div>
 

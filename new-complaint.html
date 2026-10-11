@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    (function() {
+      var theme = localStorage.getItem('campuscare-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+
+      var t = localStorage.getItem('token');
+      if (!t || t === 'null' || t === 'undefined' || t.split('.').length !== 3) {
+        document.documentElement.style.display = 'none';
+        window.location.replace('login.html');
+      }
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Report Maintenance Issue — CampusCare</title>
@@ -18,12 +30,32 @@
         <span>University Facility Portal</span>
       </div>
     </a>
-    <ul class="nav-links">
+
+    <!-- Mobile Header Actions (Theme + Hamburger) -->
+    <div class="nav-mobile-actions">
+      <button type="button" class="theme-toggle-btn" id="themeToggleBtnMobile" title="Switch Theme" aria-label="Toggle theme">
+        <span class="theme-icon">🌙</span>
+      </button>
+      <button type="button" class="nav-hamburger-btn" id="navHamburgerBtn" title="Toggle navigation menu" aria-label="Toggle navigation menu" aria-expanded="false">
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+      </button>
+    </div>
+
+    <!-- Navigation Links -->
+    <ul class="nav-links" id="navLinks">
       <li><a href="index.html">Home</a></li>
       <li><a href="dashboard.html">Dashboard</a></li>
       <li><a href="new-complaint.html" class="active">+ New Report</a></li>
+      <li class="nav-theme-desktop">
+        <button type="button" class="theme-toggle-btn" id="themeToggleBtn" title="Switch Theme" aria-label="Toggle theme">
+          <span class="theme-icon">🌙</span>
+          <span class="theme-label">Dark</span>
+        </button>
+      </li>
       <li>
-        <span id="navUserBadge" style="display: none; font-size: 0.85rem; color: var(--text-secondary); padding: 6px 12px; background: rgba(255,255,255,0.06); border-radius: var(--radius-full); border: 1px solid var(--glass-border);"></span>
+        <span id="navUserBadge" style="display: none;"></span>
       </li>
       <li><a href="login.html" id="logoutBtn" class="btn-nav-action">Sign In</a></li>
     </ul>
@@ -42,14 +74,14 @@
 
       <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <h1 style="font-family: var(--font-display); font-size: 2.1rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">
+          <h1 style="font-family: var(--font-display); font-size: 2.1rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px;">
             Report Maintenance Issue
           </h1>
           <p style="color: var(--text-secondary); font-size: 0.98rem; margin-top: 6px;">
             Submit single or multi-room facility requests. Tickets are automatically dispatched to university maintenance staff.
           </p>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-full); font-size: 0.82rem; color: #6ee7b7; font-weight: 600;">
+        <div class="api-status-pill">
           <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block;"></span>
           API Connected
         </div>
@@ -268,7 +300,7 @@
             <div class="photo-preview-wrap" id="photoPreviewWrap">
               <img id="photoPreviewThumb" class="photo-preview-thumb" src="" alt="Evidence Preview" />
               <div style="flex: 1;">
-                <div style="font-size: 0.84rem; font-weight: 600; color: #ffffff;">Image attached</div>
+                <div style="font-size: 0.84rem; font-weight: 600; color: var(--text-main);">Image attached</div>
                 <div style="font-size: 0.74rem; color: var(--text-dim);" id="photoPreviewUrlText"></div>
               </div>
               <button type="button" id="btnRemovePhoto" class="btn btn-sm btn-outline" style="padding: 4px 10px; font-size: 0.75rem;">Remove</button>

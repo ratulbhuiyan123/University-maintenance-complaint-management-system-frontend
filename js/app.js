@@ -45,37 +45,182 @@ function showToast(message, type = 'info') {
 }
 
 // ==========================================
+// AUTHENTICATION & ROUTE GUARDS
+// ==========================================
+function getAuthData() {
+  const token = localStorage.getItem('token');
+  if (!token || token === 'null' || token === 'undefined' || token.trim() === '') {
+    return { token: null, user: null };
+  }
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return { token: null, user: null };
+  }
+
+  let user = null;
+  try {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      user = JSON.parse(userStr);
+    }
+  } catch (e) {
+    user = null;
+  }
+
+  // Fallback: extract user metadata from JWT payload
+  if (!user && parts[1]) {
+    try {
+      const payload = JSON.parse(atob(parts[1]));
+      user = {
+        userId: payload.userId,
+        role: payload.role || 'STUDENT',
+        name: payload.name || payload.email || 'User'
+      };
+      localStorage.setItem('user', JSON.stringify(user));
+    } catch (e) {}
+  }
+
+  return { token, user };
+}
+
+function checkUnauthorized(response) {
+  if (response && response.status === 401) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.replace('login.html');
+    return true;
+  }
+  return false;
+}
+
+// ==========================================
+// THEME & RESPONSIVE NAVIGATION CONTROLLER
+// ==========================================
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const isLight = theme === 'light';
+  
+  document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+    const iconEl = btn.querySelector('.theme-icon');
+    const labelEl = btn.querySelector('.theme-label');
+    if (iconEl) iconEl.textContent = isLight ? '☀️' : '🌙';
+    if (labelEl) labelEl.textContent = isLight ? 'Light' : 'Dark';
+    btn.setAttribute('title', isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode');
+  });
+}
+
+function initThemeAndMobileNav() {
+  const savedTheme = localStorage.getItem('campuscare-theme') || 'dark';
+  applyTheme(savedTheme);
+
+  document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+      localStorage.setItem('campuscare-theme', newTheme);
+    });
+  });
+
+  const hamburgerBtn = document.getElementById('navHamburgerBtn');
+  const navLinks = document.getElementById('navLinks');
+
+  if (hamburgerBtn && navLinks) {
+    hamburgerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = navLinks.classList.toggle('mobile-open');
+      hamburgerBtn.classList.toggle('active', isOpen);
+      hamburgerBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (navLinks.classList.contains('mobile-open') && !navLinks.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+        navLinks.classList.remove('mobile-open');
+        hamburgerBtn.classList.remove('active');
+        hamburgerBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.classList.remove('mobile-open');
+        hamburgerBtn.classList.remove('active');
+        hamburgerBtn.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
+}
+
+// ==========================================
 // INITIALIZATION
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-  const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
-  const currentUser = userStr ? JSON.parse(userStr) : null;
+  // Initialize Theme and Mobile Nav Drawer
+  initThemeAndMobileNav();
 
-  // Active Navbar Link
-  const currentPath = window.location.pathname;
+  const { token, user: currentUser } = getAuthData();
+
+  // Active Navbar Link (Clean path matching)
+  const currentFile = window.location.pathname.split('/').pop() || 'index.html';
   document.querySelectorAll('.nav-links a').forEach(link => {
-    if (link.getAttribute('href') && currentPath.endsWith(link.getAttribute('href'))) {
+    const href = link.getAttribute('href');
+    if (href && (href === currentFile || (currentFile === '' && href === 'index.html'))) {
       link.classList.add('active');
+    } else {
+      link.classList.remove('active');
     }
   });
 
-  // User Info & Logout
-  const navUserBadge = document.getElementById('navUserBadge');
-  if (navUserBadge && currentUser) {
-    navUserBadge.style.display = 'inline-block';
-    navUserBadge.textContent = `👤 ${currentUser.name || 'User'} (${(currentUser.role || 'STUDENT').toUpperCase()})`;
-  }
-
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn && token) {
-    logoutBtn.textContent = 'Sign Out';
-    logoutBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = 'login.html';
+  // Zero-Latency Route Protection: Intercept links to private routes when guest
+  document.querySelectorAll('a[href="dashboard.html"], a[href="new-complaint.html"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const auth = getAuthData();
+      if (!auth.token) {
+        e.preventDefault();
+        window.location.replace('login.html');
+      }
     });
+  });
+
+  // User Info & Navbar Auth State (Clean, single action button)
+  const navUserBadge = document.getElementById('navUserBadge');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  if (token && currentUser) {
+    if (navUserBadge) {
+      navUserBadge.style.display = 'inline-flex';
+      navUserBadge.className = 'nav-user-badge';
+      navUserBadge.innerHTML = `
+        <span>👤 ${currentUser.name || 'User'}</span>
+        <span class="role-pill">${(currentUser.role || 'STUDENT').toUpperCase()}</span>
+      `;
+    }
+    if (logoutBtn) {
+      logoutBtn.textContent = 'Sign Out';
+      logoutBtn.href = '#';
+      logoutBtn.className = 'btn-nav-action sign-out';
+      logoutBtn.onclick = (e) => {
+        e.preventDefault();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.replace('login.html');
+      };
+    }
+  } else {
+    // Guest State: hide user badge completely, keep ONLY ONE clean "Sign In" button
+    if (navUserBadge) {
+      navUserBadge.style.display = 'none';
+      navUserBadge.innerHTML = '';
+    }
+    if (logoutBtn) {
+      logoutBtn.textContent = 'Sign In';
+      logoutBtn.href = 'login.html';
+      logoutBtn.className = 'btn-nav-action';
+      logoutBtn.onclick = null;
+    }
   }
 
   // 1. LOGIN
@@ -150,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. DASHBOARD
   if (document.getElementById('complaintsTableBody')) {
     if (!token) {
-      window.location.href = 'login.html';
+      window.location.replace('login.html');
       return;
     }
 
@@ -175,8 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const reportForm = document.getElementById('singleMultiComplaintForm') || document.getElementById('multiLocationComplaintForm');
   if (reportForm) {
     if (!token) {
-      showToast('Please log in first.', 'error');
-      setTimeout(() => window.location.href = 'login.html', 1000);
+      window.location.replace('login.html');
       return;
     }
     initReportForm(token, reportForm);
@@ -274,6 +418,7 @@ async function initReportForm(token, form) {
     const res = await fetch(`${API_URL}/complaints/meta`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
+    if (checkUnauthorized(res)) return;
     if (res.ok) {
       const data = await res.json();
       cachedMetadata = data.data || {};
@@ -909,6 +1054,7 @@ async function initReportForm(token, form) {
         })
       });
 
+      if (checkUnauthorized(res)) return;
       const result = await res.json();
 
       if (res.ok && result.status === 'success') {
@@ -945,6 +1091,7 @@ async function fetchAndDisplayComplaints(token, currentUser) {
     const res = await fetch(`${API_URL}/complaints`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
+    if (checkUnauthorized(res)) return;
     const result = await res.json();
 
     if (res.ok && result.status === 'success') {
@@ -1069,10 +1216,10 @@ function renderComplaintsTable(complaints, token, currentUser) {
 
     return `
       <tr>
-        <td><strong style="color: #ffffff;">#${c.ComplaintID}</strong></td>
-        <td>${category}</td>
-        <td><span style="color: #ffffff; font-weight: 500;">${location}</span></td>
-        <td style="max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.Description}">${c.Description}</td>
+        <td><strong style="color: var(--text-main);">#${c.ComplaintID}</strong></td>
+        <td><span style="color: var(--text-main); font-weight: 500;">${category}</span></td>
+        <td><span style="color: var(--text-main); font-weight: 600;">${location}</span></td>
+        <td style="max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary);" title="${c.Description}">${c.Description}</td>
         <td><strong style="color: ${c.Priority === 'URGENT' || c.Priority === 'HIGH' ? 'var(--danger)' : 'var(--text-secondary)'};">${c.Priority || 'MEDIUM'}</strong></td>
         <td><span class="badge-glass ${badgeClass}">${status}</span></td>
         <td style="color: var(--text-muted);">${date}</td>
@@ -1132,6 +1279,7 @@ function initEditModal(token, currentUser) {
           },
           body: JSON.stringify({ description, priority })
         });
+        if (checkUnauthorized(res)) return;
         const result = await res.json();
 
         if (res.ok && result.status === 'success') {
@@ -1166,6 +1314,7 @@ async function executeDeleteComplaint(id, token, currentUser) {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
+    if (checkUnauthorized(res)) return;
     const result = await res.json();
 
     if (res.ok && result.status === 'success') {

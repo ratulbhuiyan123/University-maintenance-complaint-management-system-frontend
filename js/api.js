@@ -4,7 +4,8 @@
  * Prepared for Phase 3 API Integration
  */
 
-const API_BASE_URL = 'http://localhost:5000/api';
+// const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://campusfix-backend-ten.vercel.app/api';
 
 // Auth Token Management
 function getToken() {

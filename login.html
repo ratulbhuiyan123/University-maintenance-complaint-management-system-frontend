@@ -103,9 +103,34 @@
         Don't have an account? <a href="register.html" style="color: var(--primary-light); font-weight: 600; text-decoration: none;">Register here</a>
       </div>
 
-      <div class="test-accounts-box" style="margin-top: 1.5rem; padding: 14px; border-radius: var(--radius-md); font-size: 0.82rem; text-align: center;">
-        <p style="font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Test Accounts (password: password123):</p>
-        <p>Student: <code>student@campus.edu</code> | Admin: <code>admin@campus.edu</code></p>
+      <div class="test-accounts-box">
+        <div class="test-accounts-title">🔑 Demo Credentials (Click to Copy):</div>
+        <div class="test-cred-list">
+          <div class="test-cred-row">
+            <span class="test-cred-label">Student:</span>
+            <code class="test-cred-code">student@campus.edu</code>
+            <button type="button" class="btn-copy-cred" data-copy="student@campus.edu" data-field="email" title="Copy Student Email" aria-label="Copy Student Email">
+              <span class="copy-icon">📋</span>
+              <span class="copy-text">Copy</span>
+            </button>
+          </div>
+          <div class="test-cred-row">
+            <span class="test-cred-label">Admin:</span>
+            <code class="test-cred-code">admin@campus.edu</code>
+            <button type="button" class="btn-copy-cred" data-copy="admin@campus.edu" data-field="email" title="Copy Admin Email" aria-label="Copy Admin Email">
+              <span class="copy-icon">📋</span>
+              <span class="copy-text">Copy</span>
+            </button>
+          </div>
+          <div class="test-cred-row">
+            <span class="test-cred-label">Password:</span>
+            <code class="test-cred-code">password123</code>
+            <button type="button" class="btn-copy-cred" data-copy="password123" data-field="password" title="Copy Password" aria-label="Copy Password">
+              <span class="copy-icon">📋</span>
+              <span class="copy-text">Copy</span>
+            </button>
+          </div>
+        </div>
       </div>
 
     </div>

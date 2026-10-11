@@ -261,6 +261,75 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Copy Demo Credentials Helper with Autofill & Feedback
+  document.querySelectorAll('.btn-copy-cred').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const textToCopy = btn.getAttribute('data-copy');
+      const targetField = btn.getAttribute('data-field');
+      if (!textToCopy) return;
+
+      const copyToClipboard = () => {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          return navigator.clipboard.writeText(textToCopy);
+        }
+        return new Promise((resolve, reject) => {
+          const textarea = document.createElement('textarea');
+          textarea.value = textToCopy;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          try {
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            resolve();
+          } catch (err) {
+            document.body.removeChild(textarea);
+            reject(err);
+          }
+        });
+      };
+
+      copyToClipboard().then(() => {
+        const iconEl = btn.querySelector('.copy-icon');
+        const textEl = btn.querySelector('.copy-text');
+        const prevIcon = iconEl ? iconEl.textContent : '📋';
+        const prevText = textEl ? textEl.textContent : 'Copy';
+
+        if (iconEl) iconEl.textContent = '✓';
+        if (textEl) textEl.textContent = 'Copied!';
+        btn.classList.add('copied');
+
+        // Autofill matching form input
+        if (targetField === 'email') {
+          const emailInput = document.getElementById('email');
+          if (emailInput) {
+            emailInput.value = textToCopy;
+            emailInput.dispatchEvent(new Event('input'));
+          }
+        } else if (targetField === 'password') {
+          const passInput = document.getElementById('password');
+          if (passInput) {
+            passInput.value = textToCopy;
+            passInput.dispatchEvent(new Event('input'));
+          }
+        }
+
+        showToast(`Copied: ${textToCopy}`, 'success');
+
+        setTimeout(() => {
+          if (iconEl) iconEl.textContent = prevIcon;
+          if (textEl) textEl.textContent = prevText;
+          btn.classList.remove('copied');
+        }, 1600);
+      }).catch(err => {
+        console.error('Copy error:', err);
+        showToast('Failed to copy. Please copy manually.', 'error');
+      });
+    });
+  });
+
   // 2. REGISTER
   const registerForm = document.getElementById('registerForm');
   if (registerForm) {

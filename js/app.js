@@ -100,6 +100,11 @@ function checkUnauthorized(response) {
 // ==========================================
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
   const isLight = theme === 'light';
   
   document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
@@ -369,10 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (currentUser) {
-      const nameEl = document.getElementById('userNameDisplay');
-      const roleEl = document.getElementById('userRoleDisplay');
-      if (nameEl) nameEl.textContent = currentUser.name || 'User';
-      if (roleEl) roleEl.textContent = (currentUser.role || 'STUDENT').toUpperCase();
+      updateDashboardRoleUI(currentUser);
     }
 
     fetchAndDisplayComplaints(token, currentUser);
@@ -383,6 +385,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initEditModal(token, currentUser);
+    initDetailsModal();
+    initAssignModal(token, currentUser);
+    initStatusModal(token, currentUser);
+    initExportCSV();
   }
 
   // 4. REPORT FORM (MULTI-ROOM & MULTI-CATEGORY)
@@ -1148,13 +1154,84 @@ async function initReportForm(token, form) {
 }
 
 // ==========================================
+// DASHBOARD ROLE-BASED UI CONTROLLER
+// ==========================================
+function updateDashboardRoleUI(currentUser) {
+  if (!currentUser) return;
+  const role = (currentUser.role || 'STUDENT').toUpperCase();
+
+  const titleEl = document.getElementById('dashboardMainTitle');
+  const subTitleEl = document.getElementById('dashboardSubTitle');
+  const nameEl = document.getElementById('userNameDisplay');
+  const roleEl = document.getElementById('userRoleDisplay');
+  const portalBadge = document.getElementById('portalTypeBadge');
+  const btnReport = document.getElementById('btnReportIssueHeader');
+  const btnExport = document.getElementById('btnExportCSV');
+
+  const titleTotal = document.getElementById('titleStatTotal');
+  const titlePending = document.getElementById('titleStatPending');
+  const titleProgress = document.getElementById('titleStatProgress');
+  const titleResolved = document.getElementById('titleStatResolved');
+
+  if (nameEl) nameEl.textContent = currentUser.name || 'User';
+
+  if (role === 'ADMIN') {
+    if (roleEl) {
+      roleEl.textContent = 'ADMIN';
+      roleEl.className = 'badge-glass badge-rejected';
+    }
+    if (portalBadge) portalBadge.textContent = '🛡️ CAMPUS OPERATIONS CONSOLE';
+    if (titleEl) titleEl.innerHTML = `Campus Maintenance <span style="background: var(--primary-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Operations Center</span>`;
+    if (subTitleEl) subTitleEl.textContent = 'Campus-wide facility oversight, technician dispatch, and status resolution.';
+    if (btnReport) btnReport.textContent = '+ Log Maintenance Report';
+    if (btnExport) btnExport.style.display = 'inline-flex';
+
+    if (titleTotal) titleTotal.textContent = 'Total Campus Reports';
+    if (titlePending) titlePending.textContent = 'Needs Action (Pending)';
+    if (titleProgress) titleProgress.textContent = 'Active Work Orders';
+    if (titleResolved) titleResolved.textContent = 'Resolved & Closed';
+  } else if (role === 'STAFF') {
+    if (roleEl) {
+      roleEl.textContent = 'STAFF';
+      roleEl.className = 'badge-glass badge-in-progress';
+    }
+    if (portalBadge) portalBadge.textContent = '🛠️ TECHNICIAN WORK ORDERS';
+    if (titleEl) titleEl.innerHTML = `Technician <span style="background: var(--primary-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Work Orders</span>`;
+    if (subTitleEl) subTitleEl.textContent = 'Active maintenance jobs and inspection requests assigned to your department.';
+    if (btnReport) btnReport.textContent = '+ Report New Fault';
+    if (btnExport) btnExport.style.display = 'none';
+
+    if (titleTotal) titleTotal.textContent = 'Assigned Jobs';
+    if (titlePending) titlePending.textContent = 'Pending Inspection';
+    if (titleProgress) titleProgress.textContent = 'Work In Progress';
+    if (titleResolved) titleResolved.textContent = 'Resolved Jobs';
+  } else {
+    // Student
+    if (roleEl) {
+      roleEl.textContent = 'STUDENT';
+      roleEl.className = 'badge-glass badge-assigned';
+    }
+    if (portalBadge) portalBadge.textContent = '🎓 STUDENT SERVICE PORTAL';
+    if (titleEl) titleEl.innerHTML = `Welcome, <span style="background: var(--primary-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">${currentUser.name || 'Student'}</span>`;
+    if (subTitleEl) subTitleEl.textContent = 'Track your reported campus facility requests and repair progress.';
+    if (btnReport) btnReport.textContent = '+ Report Maintenance Issue';
+    if (btnExport) btnExport.style.display = 'none';
+
+    if (titleTotal) titleTotal.textContent = 'My Total Reports';
+    if (titlePending) titlePending.textContent = 'Pending Review';
+    if (titleProgress) titleProgress.textContent = 'Under Repair';
+    if (titleResolved) titleResolved.textContent = 'Resolved Issues';
+  }
+}
+
+// ==========================================
 // DASHBOARD CONTROLLER (CRUD)
 // ==========================================
 async function fetchAndDisplayComplaints(token, currentUser) {
   const tbody = document.getElementById('complaintsTableBody');
   if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">Loading complaints...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">Loading complaints...</td></tr>';
 
   try {
     const res = await fetch(`${API_URL}/complaints`, {
@@ -1165,14 +1242,15 @@ async function fetchAndDisplayComplaints(token, currentUser) {
 
     if (res.ok && result.status === 'success') {
       allComplaints = result.data.complaints || [];
+      updateDashboardRoleUI(currentUser);
       updateDashboardStats(allComplaints);
       renderComplaintsTable(allComplaints, token, currentUser);
       initSearchAndFilter(allComplaints, token, currentUser);
     } else {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 2rem;">${result.message || 'Error'}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--danger); padding: 2rem;">${result.message || 'Error'}</td></tr>`;
     }
   } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 2rem;">Backend server disconnected</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--danger); padding: 2rem;">Backend server disconnected</td></tr>';
   }
 }
 
@@ -1250,10 +1328,12 @@ function renderComplaintsTable(complaints, token, currentUser) {
   const tbody = document.getElementById('complaintsTableBody');
   if (!tbody) return;
 
+  const role = (currentUser && currentUser.role ? currentUser.role : 'STUDENT').toUpperCase();
+
   if (complaints.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 3rem;">
           <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📭</div>
           <p>No maintenance reports found.</p>
           <a href="new-complaint.html" class="btn btn-outline btn-sm" style="margin-top: 10px;">+ Create Report</a>
@@ -1266,36 +1346,100 @@ function renderComplaintsTable(complaints, token, currentUser) {
   tbody.innerHTML = complaints.map(c => {
     const status = (c.Status || 'PENDING').toUpperCase();
     let badgeClass = 'badge-pending';
-    if (status === 'IN_PROGRESS' || status === 'ASSIGNED') badgeClass = 'badge-in-progress';
+    if (status === 'ASSIGNED') badgeClass = 'badge-assigned';
+    if (status === 'IN_PROGRESS') badgeClass = 'badge-in-progress';
     if (status === 'RESOLVED') badgeClass = 'badge-resolved';
+    if (status === 'REJECTED') badgeClass = 'badge-rejected';
 
     const location = c.room ? `${c.room.building ? c.room.building.Name + ' — ' : ''}Room ${c.room.RoomNumber}` : `Room #${c.RoomID}`;
     const category = c.category ? c.category.Name : 'General';
     const date = c.CreatedAt ? new Date(c.CreatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
+    const assignedStaffName = c.assignedStaff ? c.assignedStaff.Name : '<span style="color: var(--text-muted); font-size: 0.8rem;">Unassigned</span>';
 
+    // Role-tailored action buttons
     let actionBtns = '';
-    if (status === 'PENDING') {
+
+    if (role === 'ADMIN') {
       actionBtns = `
-        <button class="btn btn-outline btn-sm btn-edit-ticket" data-id="${c.ComplaintID}" title="Edit Ticket">✏️ Edit</button>
-        <button class="btn btn-danger btn-sm btn-delete-ticket" data-id="${c.ComplaintID}" title="Delete Ticket">🗑️ Delete</button>
+        <button class="btn btn-primary btn-sm btn-assign-ticket" data-id="${c.ComplaintID}" title="Manage Ticket & Update Status">⚡ Manage Status</button>
+        <button class="btn btn-outline btn-sm btn-view-ticket" data-id="${c.ComplaintID}" title="View Details & Audit Trail">👁️ View</button>
+        <button class="btn btn-danger btn-sm btn-delete-ticket" data-id="${c.ComplaintID}" title="Delete Ticket">🗑️</button>
+      `;
+    } else if (role === 'STAFF') {
+      actionBtns = `
+        <button class="btn btn-primary btn-sm btn-status-ticket" data-id="${c.ComplaintID}" title="Update Work Order Status">🛠️ Status</button>
+        <button class="btn btn-outline btn-sm btn-view-ticket" data-id="${c.ComplaintID}" title="View Details & Audit Trail">👁️ View</button>
       `;
     } else {
-      actionBtns = '<span style="color: var(--text-dim); font-size: 0.8rem;">Locked</span>';
+      // Student
+      if (status === 'PENDING') {
+        actionBtns = `
+          <button class="btn btn-outline btn-sm btn-view-ticket" data-id="${c.ComplaintID}" title="View Progress">👁️ View</button>
+          <button class="btn btn-outline btn-sm btn-edit-ticket" data-id="${c.ComplaintID}" title="Edit Ticket Details">✏️ Edit</button>
+          <button class="btn btn-danger btn-sm btn-delete-ticket" data-id="${c.ComplaintID}" title="Cancel Ticket">🗑️ Cancel</button>
+        `;
+      } else {
+        actionBtns = `
+          <button class="btn btn-outline btn-sm btn-view-ticket" data-id="${c.ComplaintID}" title="View Progress">👁️ View</button>
+          <span style="color: var(--text-dim); font-size: 0.8rem; font-weight: 600; padding: 4px 6px;">🔒 In Review</span>
+        `;
+      }
     }
 
     return `
       <tr>
-        <td><strong style="color: var(--text-main);">#${c.ComplaintID}</strong></td>
+        <td>
+          <a href="javascript:void(0)" class="ticket-link-id" data-id="${c.ComplaintID}" style="font-weight: 700; color: var(--primary-light); text-decoration: none;">
+            #${c.ComplaintID}
+          </a>
+        </td>
         <td><span style="color: var(--text-main); font-weight: 500;">${category}</span></td>
         <td><span style="color: var(--text-main); font-weight: 600;">${location}</span></td>
-        <td style="max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary);" title="${c.Description}">${c.Description}</td>
-        <td><strong style="color: ${c.Priority === 'URGENT' || c.Priority === 'HIGH' ? 'var(--danger)' : 'var(--text-secondary)'};">${c.Priority || 'MEDIUM'}</strong></td>
+        <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary);" title="${c.Description || ''}">${c.Description || ''}</td>
+        <td><strong style="color: ${c.Priority === 'URGENT' || c.Priority === 'HIGH' ? 'var(--danger)' : 'var(--text-secondary)'}; font-size: 0.85rem;">${c.Priority || 'MEDIUM'}</strong></td>
         <td><span class="badge-glass ${badgeClass}">${status}</span></td>
-        <td style="color: var(--text-muted);">${date}</td>
-        <td><div style="display: flex; gap: 6px;">${actionBtns}</div></td>
+        <td>${assignedStaffName}</td>
+        <td style="color: var(--text-muted); font-size: 0.85rem;">${date}</td>
+        <td><div style="display: flex; gap: 5px; justify-content: center; align-items: center; flex-wrap: wrap;">${actionBtns}</div></td>
       </tr>
     `;
   }).join('');
+
+  // Ticket ID click -> Open Details
+  tbody.querySelectorAll('.ticket-link-id').forEach(link => {
+    link.addEventListener('click', () => {
+      const id = Number(link.getAttribute('data-id'));
+      const item = allComplaints.find(c => c.ComplaintID === id);
+      if (item) openDetailsModal(item, token);
+    });
+  });
+
+  // View Details Listeners
+  tbody.querySelectorAll('.btn-view-ticket').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.getAttribute('data-id'));
+      const item = allComplaints.find(c => c.ComplaintID === id);
+      if (item) openDetailsModal(item, token);
+    });
+  });
+
+  // Admin Assign Listeners
+  tbody.querySelectorAll('.btn-assign-ticket').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.getAttribute('data-id'));
+      const item = allComplaints.find(c => c.ComplaintID === id);
+      if (item) openAssignModal(item, token);
+    });
+  });
+
+  // Staff Status Listeners
+  tbody.querySelectorAll('.btn-status-ticket').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.getAttribute('data-id'));
+      const item = allComplaints.find(c => c.ComplaintID === id);
+      if (item) openStatusModal(item, token);
+    });
+  });
 
   // Edit Listeners
   tbody.querySelectorAll('.btn-edit-ticket').forEach(btn => {
@@ -1395,4 +1539,445 @@ async function executeDeleteComplaint(id, token, currentUser) {
   } catch (err) {
     showToast('Failed to delete ticket.', 'error');
   }
+}
+
+// ==========================================
+// TICKET DETAILS & VISUAL AUDIT TIMELINE MODAL
+// ==========================================
+function initDetailsModal() {
+  const modal = document.getElementById('detailsModal');
+  const btnClose = document.getElementById('btnDetailsModalClose');
+  const btnDismiss = document.getElementById('btnDetailsModalDismiss');
+
+  if (!modal) return;
+
+  function closeModal() {
+    modal.classList.remove('active');
+  }
+
+  if (btnClose) btnClose.addEventListener('click', closeModal);
+  if (btnDismiss) btnDismiss.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+}
+
+function openDetailsModal(c, token) {
+  const modal = document.getElementById('detailsModal');
+  if (!modal) return;
+
+  // Title & Status Badges
+  const titleEl = document.getElementById('detailsModalTitle');
+  const statusBadge = document.getElementById('detailsStatusBadge');
+  const priorityBadge = document.getElementById('detailsPriorityBadge');
+
+  if (titleEl) titleEl.textContent = `Ticket #${c.ComplaintID}`;
+  
+  const status = (c.Status || 'PENDING').toUpperCase();
+  let badgeClass = 'badge-pending';
+  if (status === 'ASSIGNED') badgeClass = 'badge-assigned';
+  if (status === 'IN_PROGRESS') badgeClass = 'badge-in-progress';
+  if (status === 'RESOLVED') badgeClass = 'badge-resolved';
+  if (status === 'REJECTED') badgeClass = 'badge-rejected';
+
+  if (statusBadge) {
+    statusBadge.textContent = status;
+    statusBadge.className = `badge-glass ${badgeClass}`;
+  }
+
+  if (priorityBadge) {
+    priorityBadge.textContent = c.Priority || 'MEDIUM';
+    priorityBadge.className = `badge-glass ${c.Priority === 'URGENT' || c.Priority === 'HIGH' ? 'badge-rejected' : 'badge-assigned'}`;
+  }
+
+  // Info Cards
+  const location = c.room ? `${c.room.building ? c.room.building.Name + ' — ' : ''}Room ${c.room.RoomNumber}` : `Room #${c.RoomID}`;
+  const category = c.category ? c.category.Name : 'General';
+  const requester = c.student ? `${c.student.Name} (${c.student.Email})` : (c.UserID ? `User #${c.UserID}` : 'Student');
+  const assigned = c.assignedStaff ? `${c.assignedStaff.Name} (${c.assignedStaff.Email})` : 'Unassigned';
+
+  const locEl = document.getElementById('detailsLocation');
+  const catEl = document.getElementById('detailsCategory');
+  const reqEl = document.getElementById('detailsRequester');
+  const staffEl = document.getElementById('detailsAssignedStaff');
+  const descEl = document.getElementById('detailsDescription');
+
+  if (locEl) locEl.textContent = location;
+  if (catEl) catEl.textContent = category;
+  if (reqEl) reqEl.textContent = requester;
+  if (staffEl) staffEl.textContent = assigned;
+  if (descEl) descEl.textContent = c.Description || 'No description provided.';
+
+  // Photo / Evidence
+  const photoWrap = document.getElementById('detailsPhotoWrap');
+  const photoImg = document.getElementById('detailsPhotoImg');
+  const photoLink = document.getElementById('detailsPhotoLink');
+
+  if (photoWrap && photoImg && photoLink) {
+    if (c.PhotoURL) {
+      photoImg.src = c.PhotoURL;
+      photoLink.href = c.PhotoURL;
+      photoWrap.style.display = 'block';
+    } else {
+      photoWrap.style.display = 'none';
+    }
+  }
+
+  // Render Status Activity Timeline
+  function renderTimeline(logs) {
+    const timelineEl = document.getElementById('detailsTimeline');
+    const countEl = document.getElementById('detailsLogCount');
+    if (!timelineEl) return;
+
+    if (!logs || logs.length === 0) {
+      timelineEl.innerHTML = `
+        <div style="color: var(--text-dim); padding: 1rem; text-align: center; font-size: 0.9rem;">
+          No status activity or transitions recorded yet.
+        </div>
+      `;
+      if (countEl) countEl.textContent = '0 updates';
+      return;
+    }
+
+    if (countEl) countEl.textContent = `${logs.length} update${logs.length > 1 ? 's' : ''}`;
+
+    // Sort ascending by time
+    const sortedLogs = [...logs].sort((a, b) => new Date(a.CreatedAt || 0) - new Date(b.CreatedAt || 0));
+
+    timelineEl.innerHTML = sortedLogs.map(log => {
+      const logStatus = (log.NewStatus || 'UPDATE').toUpperCase();
+      let logBadge = 'badge-pending';
+      let dotType = 'pending';
+
+      if (logStatus === 'ASSIGNED') { logBadge = 'badge-assigned'; dotType = 'assigned'; }
+      if (logStatus === 'IN_PROGRESS') { logBadge = 'badge-in-progress'; dotType = 'in_progress'; }
+      if (logStatus === 'RESOLVED') { logBadge = 'badge-resolved'; dotType = 'resolved'; }
+      if (logStatus === 'REJECTED') { logBadge = 'badge-rejected'; dotType = 'rejected'; }
+
+      const timeStr = log.CreatedAt 
+        ? new Date(log.CreatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : 'Timestamp not recorded';
+
+      const actorName = log.updatedByUser ? `${log.updatedByUser.Name}` : 'System / Dispatcher';
+      const actorRole = log.updatedByUser && log.updatedByUser.Role ? `[${log.updatedByUser.Role}]` : '';
+
+      return `
+        <div class="timeline-item">
+          <div class="timeline-dot ${dotType}"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <span class="badge-glass ${logBadge}">${logStatus}</span>
+              <span class="timeline-time">${timeStr}</span>
+            </div>
+            <div class="timeline-actor">👤 ${actorName} <span style="opacity: 0.8; font-weight: 500;">${actorRole}</span></div>
+            ${log.Note ? `<div class="timeline-note">"${log.Note}"</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Initial render from in-memory complaint object
+  renderTimeline(c.statusLogs || []);
+
+  // Fetch fresh ticket data from server to guarantee complete status log history
+  if (token) {
+    fetch(`${API_URL}/complaints/${c.ComplaintID}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(res => {
+        if (res.status === 'success' && res.data && res.data.complaint && res.data.complaint.statusLogs) {
+          renderTimeline(res.data.complaint.statusLogs);
+        }
+      })
+      .catch(() => {});
+  }
+
+  modal.classList.add('active');
+}
+
+// ==========================================
+// ADMIN DISPATCH / ASSIGN MODAL
+// ==========================================
+let cachedStaffList = null;
+
+function initAssignModal(token, currentUser) {
+  const modal = document.getElementById('assignModal');
+  const btnClose = document.getElementById('btnAssignModalClose');
+  const btnCancel = document.getElementById('btnAssignModalCancel');
+  const form = document.getElementById('assignComplaintForm');
+
+  if (!modal) return;
+
+  function closeModal() {
+    modal.classList.remove('active');
+  }
+
+  if (btnClose) btnClose.addEventListener('click', closeModal);
+  if (btnCancel) btnCancel.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('assignComplaintId').value;
+      const statusSelect = document.getElementById('assignStatus');
+      const status = statusSelect ? statusSelect.value : 'ASSIGNED';
+      const staffSelect = document.getElementById('assignStaffSelect');
+      const assignedStaffId = staffSelect && staffSelect.value ? Number(staffSelect.value) : null;
+      const note = document.getElementById('assignNote').value.trim();
+
+      const saveBtn = document.getElementById('btnSaveAssign');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Updating...';
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/complaints/admin/${id}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status, assignedStaffId, note })
+        });
+
+        if (checkUnauthorized(res)) return;
+        const result = await res.json();
+
+        if (res.ok && result.status === 'success') {
+          showToast(`Ticket #${id} updated to ${status}!`, 'success');
+          closeModal();
+          await fetchAndDisplayComplaints(token, currentUser);
+        } else {
+          showToast(result.message || 'Update failed.', 'error');
+        }
+      } catch (err) {
+        showToast('Server error during ticket update.', 'error');
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = '💾 Save & Apply Updates';
+        }
+      }
+    });
+  }
+}
+
+async function openAssignModal(c, token) {
+  const modal = document.getElementById('assignModal');
+  if (!modal) return;
+
+  document.getElementById('assignComplaintId').value = c.ComplaintID;
+
+  const roomName = c.room ? `${c.room.building ? c.room.building.Name + ' — ' : ''}Room ${c.room.RoomNumber}` : `Room #${c.RoomID}`;
+  const catName = c.category ? c.category.Name : 'General';
+  document.getElementById('assignComplaintMeta').textContent = `Ticket #${c.ComplaintID} | ${roomName} | ${catName}`;
+  
+  const priorityEl = document.getElementById('assignComplaintPriority');
+  if (priorityEl) {
+    priorityEl.textContent = (c.Priority || 'MEDIUM').toUpperCase();
+  }
+
+  const statusSelect = document.getElementById('assignStatus');
+  if (statusSelect) {
+    statusSelect.value = (c.Status || 'PENDING').toUpperCase();
+  }
+
+  document.getElementById('assignNote').value = '';
+
+  const select = document.getElementById('assignStaffSelect');
+  select.innerHTML = '<option value="">Loading technicians...</option>';
+
+  async function populateStaffOptions(staffMembers) {
+    const list = staffMembers || [];
+    select.innerHTML = '<option value="">-- Leave Unassigned --</option>' +
+      list.map(s => `
+        <option value="${s.UserID}" ${c.AssignedStaffID === s.UserID ? 'selected' : ''}>
+          ${s.Name} (${s.Email})
+        </option>
+      `).join('');
+  }
+
+  if (cachedStaffList) {
+    populateStaffOptions(cachedStaffList);
+  } else {
+    try {
+      const res = await fetch(`${API_URL}/complaints/staff-list`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success' && data.data && data.data.staff) {
+        cachedStaffList = data.data.staff;
+        populateStaffOptions(cachedStaffList);
+      } else {
+        select.innerHTML = '<option value="">-- Leave Unassigned --</option>';
+      }
+    } catch (err) {
+      select.innerHTML = '<option value="">-- Leave Unassigned --</option>';
+    }
+  }
+
+  modal.classList.add('active');
+}
+
+// ==========================================
+// STAFF WORK ORDER STATUS UPDATE MODAL
+// ==========================================
+function initStatusModal(token, currentUser) {
+  const modal = document.getElementById('statusModal');
+  const btnClose = document.getElementById('btnStatusModalClose');
+  const btnCancel = document.getElementById('btnStatusModalCancel');
+  const form = document.getElementById('statusComplaintForm');
+
+  if (!modal) return;
+
+  function closeModal() {
+    modal.classList.remove('active');
+  }
+
+  if (btnClose) btnClose.addEventListener('click', closeModal);
+  if (btnCancel) btnCancel.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('statusComplaintId').value;
+      const status = document.getElementById('statusNewState').value;
+      const note = document.getElementById('statusNote').value.trim();
+
+      if (!note) {
+        showToast('Please provide a brief technician note regarding actions taken.', 'error');
+        return;
+      }
+
+      const saveBtn = document.getElementById('btnSaveStatus');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/complaints/staff/${id}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status, note })
+        });
+
+        if (checkUnauthorized(res)) return;
+        const result = await res.json();
+
+        if (res.ok && result.status === 'success') {
+          showToast(`Ticket #${id} updated to ${status}!`, 'success');
+          closeModal();
+          await fetchAndDisplayComplaints(token, currentUser);
+        } else {
+          showToast(result.message || 'Status update failed.', 'error');
+        }
+      } catch (err) {
+        showToast('Server error during status update.', 'error');
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = '💾 Save Update & Log Activity';
+        }
+      }
+    });
+  }
+}
+
+function openStatusModal(c, token) {
+  const modal = document.getElementById('statusModal');
+  if (!modal) return;
+
+  document.getElementById('statusComplaintId').value = c.ComplaintID;
+  const roomName = c.room ? `${c.room.building ? c.room.building.Name + ' — ' : ''}Room ${c.room.RoomNumber}` : `Room #${c.RoomID}`;
+  document.getElementById('statusComplaintMeta').textContent = `Ticket #${c.ComplaintID} | ${roomName} — "${(c.Description || '').substring(0, 50)}..."`;
+
+  // Default selection based on current ticket state
+  const stateSelect = document.getElementById('statusNewState');
+  if (c.Status === 'PENDING' || c.Status === 'ASSIGNED') {
+    stateSelect.value = 'IN_PROGRESS';
+  } else if (c.Status === 'IN_PROGRESS') {
+    stateSelect.value = 'RESOLVED';
+  } else {
+    stateSelect.value = c.Status || 'IN_PROGRESS';
+  }
+
+  document.getElementById('statusNote').value = '';
+
+  modal.classList.add('active');
+}
+
+// ==========================================
+// EXPORT COMPLAINTS TO CSV
+// ==========================================
+function initExportCSV() {
+  const btnExport = document.getElementById('btnExportCSV');
+  if (!btnExport) return;
+
+  btnExport.addEventListener('click', () => {
+    if (!allComplaints || allComplaints.length === 0) {
+      showToast('No maintenance reports available to export.', 'error');
+      return;
+    }
+
+    try {
+      const headers = ['Ticket ID', 'Category', 'Location', 'Issue Details', 'Priority', 'Status', 'Assigned Staff', 'Submitted At'];
+      
+      const escapeCSV = (str) => {
+        if (str === null || str === undefined) return '""';
+        return `"${String(str).replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
+      };
+
+      const rows = allComplaints.map(c => {
+        const id = c.ComplaintID;
+        const cat = c.category ? c.category.Name : 'General';
+        const loc = c.room ? `${c.room.building ? c.room.building.Name + ' - ' : ''}Room ${c.room.RoomNumber}` : `Room #${c.RoomID}`;
+        const desc = c.Description || '';
+        const priority = c.Priority || 'MEDIUM';
+        const status = c.Status || 'PENDING';
+        const staff = c.assignedStaff ? `${c.assignedStaff.Name} (${c.assignedStaff.Email})` : 'Unassigned';
+        const date = c.CreatedAt ? new Date(c.CreatedAt).toISOString() : 'N/A';
+
+        return [
+          id,
+          escapeCSV(cat),
+          escapeCSV(loc),
+          escapeCSV(desc),
+          escapeCSV(priority),
+          escapeCSV(status),
+          escapeCSV(staff),
+          escapeCSV(date)
+        ].join(',');
+      });
+
+      const csvString = [headers.join(','), ...rows].join('\r\n');
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
+      const dateTag = new Date().toISOString().split('T')[0];
+      downloadLink.download = `Campus_Maintenance_Reports_${dateTag}.csv`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      URL.revokeObjectURL(url);
+
+      showToast(`Exported ${allComplaints.length} tickets to CSV.`, 'success');
+    } catch (err) {
+      console.error('Export error:', err);
+      showToast('Failed to export CSV.', 'error');
+    }
+  });
 }

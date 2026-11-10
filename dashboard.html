@@ -64,20 +64,25 @@
   <!-- Main Container -->
   <main class="main-content">
     
-    <!-- User Welcome Header -->
+    <!-- Dynamic Role-Tailored Header -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
       <div>
-        <h1 style="font-family: var(--font-display); font-size: 1.85rem; font-weight: 800; color: var(--text-main);">
-          Welcome, <span id="userNameDisplay" style="background: var(--primary-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">User</span>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+          <span id="userRoleDisplay" class="badge-glass badge-assigned">STUDENT</span>
+          <span id="portalTypeBadge" style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px;">CAMPUS SERVICE PORTAL</span>
+        </div>
+        <h1 id="dashboardMainTitle" style="font-family: var(--font-display); font-size: 1.85rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px;">
+          Welcome, <span id="userNameDisplay">User</span>
         </h1>
-        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 4px;">
-          Access Role: <strong id="userRoleDisplay" class="badge-glass badge-assigned">STUDENT</strong> | Campus Facilities Overview
+        <p id="dashboardSubTitle" style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 4px;">
+          Track your campus maintenance requests and facility status in real-time.
         </p>
       </div>
 
-      <div style="display: flex; gap: 10px;">
-        <button id="btnRefresh" class="btn btn-outline btn-sm">🔄 Refresh</button>
-        <a href="new-complaint.html" class="btn btn-primary">+ Report Maintenance Issue</a>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+        <button id="btnExportCSV" class="btn btn-outline btn-sm" title="Export reports to CSV file">📥 Export CSV</button>
+        <button id="btnRefresh" class="btn btn-outline btn-sm" title="Refresh live data">🔄 Refresh</button>
+        <a href="new-complaint.html" id="btnReportIssueHeader" class="btn btn-primary">+ Report Maintenance Issue</a>
       </div>
     </div>
 
@@ -85,7 +90,7 @@
     <div class="stats-grid">
       <div class="stat-glass-card all">
         <div class="stat-info">
-          <h4>Total Reports</h4>
+          <h4 id="titleStatTotal">Total Reports</h4>
           <div class="stat-number stat-val-total" id="statTotal">0</div>
         </div>
         <div class="stat-icon" style="color: var(--primary);">📋</div>
@@ -93,7 +98,7 @@
 
       <div class="stat-glass-card pending">
         <div class="stat-info">
-          <h4>Pending Review</h4>
+          <h4 id="titleStatPending">Pending Review</h4>
           <div class="stat-number stat-val-pending" id="statPending">0</div>
         </div>
         <div class="stat-icon" style="color: var(--warning);">⏳</div>
@@ -101,7 +106,7 @@
 
       <div class="stat-glass-card in-progress">
         <div class="stat-info">
-          <h4>In Progress</h4>
+          <h4 id="titleStatProgress">In Progress</h4>
           <div class="stat-number stat-val-progress" id="statInProgress">0</div>
         </div>
         <div class="stat-icon" style="color: var(--secondary);">🔧</div>
@@ -109,7 +114,7 @@
 
       <div class="stat-glass-card resolved">
         <div class="stat-info">
-          <h4>Resolved</h4>
+          <h4 id="titleStatResolved">Resolved</h4>
           <div class="stat-number stat-val-resolved" id="statResolved">0</div>
         </div>
         <div class="stat-icon" style="color: var(--success);">✅</div>
@@ -140,19 +145,20 @@
       <table class="glass-table">
         <thead>
           <tr>
-            <th>ID</th>
+            <th style="width: 75px;">ID</th>
             <th>Category</th>
             <th>Location</th>
             <th>Issue Details</th>
             <th>Priority</th>
             <th>Status</th>
+            <th id="thAssigned">Assigned Staff</th>
             <th>Submitted</th>
-            <th>Actions</th>
+            <th style="min-width: 130px; text-align: center;">Actions</th>
           </tr>
         </thead>
         <tbody id="complaintsTableBody">
           <tr>
-            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+            <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 3rem;">
               Connecting to Supabase PostgreSQL database...
             </td>
           </tr>
@@ -203,12 +209,175 @@
     </div>
   </div>
 
+  <!-- Ticket Details & Visual Audit Timeline Modal -->
+  <div class="modal-overlay" id="detailsModal">
+    <div class="modal-box modal-box-lg">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <h3 style="font-family: var(--font-display); font-size: 1.35rem;" id="detailsModalTitle">Ticket Details</h3>
+          <span id="detailsStatusBadge" class="badge-glass">PENDING</span>
+          <span id="detailsPriorityBadge" class="badge-glass">MEDIUM</span>
+        </div>
+        <button type="button" class="modal-close" id="btnDetailsModalClose">&times;</button>
+      </div>
+
+      <div class="modal-scroll-body">
+        <!-- Ticket Overview Grid -->
+        <div class="ticket-overview-grid">
+          <div class="ticket-info-card">
+            <span class="ticket-info-label">📍 Location</span>
+            <strong class="ticket-info-val" id="detailsLocation">-</strong>
+          </div>
+          <div class="ticket-info-card">
+            <span class="ticket-info-label">🏷️ Category</span>
+            <strong class="ticket-info-val" id="detailsCategory">-</strong>
+          </div>
+          <div class="ticket-info-card">
+            <span class="ticket-info-label">👤 Requester (Student)</span>
+            <strong class="ticket-info-val" id="detailsRequester">-</strong>
+          </div>
+          <div class="ticket-info-card">
+            <span class="ticket-info-label">🛠️ Assigned Technician</span>
+            <strong class="ticket-info-val" id="detailsAssignedStaff">Unassigned</strong>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div style="margin-bottom: 1.25rem;">
+          <label class="form-label" style="font-weight: 700;">Issue Description:</label>
+          <div id="detailsDescription" class="details-desc-box">
+            -
+          </div>
+        </div>
+
+        <!-- Attached Photo -->
+        <div id="detailsPhotoWrap" style="display: none; margin-bottom: 1.25rem;">
+          <label class="form-label" style="font-weight: 700;">Attached Photo / Evidence:</label>
+          <div class="details-photo-container">
+            <img id="detailsPhotoImg" src="" alt="Evidence" class="details-photo-img" />
+            <a id="detailsPhotoLink" href="#" target="_blank" class="details-photo-link">🔍 View Full Size</a>
+          </div>
+        </div>
+
+        <!-- Visual Audit Timeline -->
+        <div>
+          <label class="form-label" style="font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
+            <span>📜 Ticket Activity & Status Log (Audit Trail)</span>
+            <span style="font-size: 0.75rem; color: var(--text-dim);" id="detailsLogCount">0 updates</span>
+          </label>
+          <div class="timeline-container" id="detailsTimeline">
+            <!-- Timeline items rendered dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.25rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+        <button type="button" class="btn btn-outline" id="btnDetailsModalDismiss">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin: Manage Complaint (Status, Assign, Priority, Notes) Modal -->
+  <div class="modal-overlay" id="assignModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.3rem;">⚡</span>
+          <h3 style="font-family: var(--font-display); font-size: 1.3rem;">Admin Operations & Status Dispatch</h3>
+        </div>
+        <button type="button" class="modal-close" id="btnAssignModalClose">&times;</button>
+      </div>
+
+      <form id="assignComplaintForm">
+        <input type="hidden" id="assignComplaintId" />
+
+        <div class="form-group">
+          <label class="form-label">Ticket Location & Details</label>
+          <div id="assignComplaintMeta" style="font-weight: 600; color: var(--primary-light); padding: 10px 14px; background: rgba(255, 255, 255, 0.05); border-radius: var(--radius-sm); border: 1px solid var(--glass-border); font-size: 0.9rem;">
+            ...
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">
+            Student Reported Priority: <strong id="assignComplaintPriority" style="color: var(--text-main);">-</strong>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="assignStatus">Update Ticket Status <span style="color: var(--danger);">*</span></label>
+          <select id="assignStatus" class="form-control-glass" required>
+            <option value="PENDING">⏳ Pending Review (Awaiting Action)</option>
+            <option value="ASSIGNED">👤 Assigned to Technician</option>
+            <option value="IN_PROGRESS">🔧 In Progress (Work Commenced / Parts Requisitioned)</option>
+            <option value="RESOLVED">✅ Resolved (Work Inspected & Completed)</option>
+            <option value="REJECTED">❌ Rejected (Invalid / Duplicate / Not a Fault)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="assignStaffSelect">Assign / Reassign Maintenance Technician</label>
+          <select id="assignStaffSelect" class="form-control-glass">
+            <option value="">-- Leave Unassigned --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="assignNote">Administrative / Dispatch Remarks</label>
+          <textarea id="assignNote" class="form-control-glass" rows="2" placeholder="e.g. Work inspected and verified by Admin, or Dispatched to senior electrician..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.75rem;">
+          <button type="button" class="btn btn-outline" id="btnAssignModalCancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveAssign">💾 Save & Apply Updates</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Staff: Update Complaint Status Modal -->
+  <div class="modal-overlay" id="statusModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="font-family: var(--font-display); font-size: 1.3rem;">🛠️ Update Work Order Status</h3>
+        <button type="button" class="modal-close" id="btnStatusModalClose">&times;</button>
+      </div>
+
+      <form id="statusComplaintForm">
+        <input type="hidden" id="statusComplaintId" />
+
+        <div class="form-group">
+          <label class="form-label">Ticket Location & Description</label>
+          <div id="statusComplaintMeta" style="font-weight: 600; color: var(--secondary); padding: 10px 14px; background: rgba(255, 255, 255, 0.05); border-radius: var(--radius-sm); border: 1px solid var(--glass-border); font-size: 0.9rem;">
+            ...
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="statusNewState">New Status <span style="color: var(--danger);">*</span></label>
+          <select id="statusNewState" class="form-control-glass" required>
+            <option value="IN_PROGRESS">🔧 In Progress (Work Commenced / Parts Requisitioned)</option>
+            <option value="RESOLVED">✅ Resolved (Work Completed & Tested)</option>
+            <option value="REJECTED">❌ Rejected (Duplicate / Not a Maintenance Fault)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="statusNote">Technician Resolution / Action Note <span style="color: var(--danger);">*</span></label>
+          <textarea id="statusNote" class="form-control-glass" rows="3" placeholder="Describe the diagnostic actions taken or repair outcome (e.g. Replaced capacitor on outdoor AC unit, tested air temperature at 18°C)..." required></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.75rem;">
+          <button type="button" class="btn btn-outline" id="btnStatusModalCancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveStatus">💾 Save Update & Log Activity</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- Footer -->
   <footer>
-    <p>&copy; 2026 University Maintenance & Complaint Management System | CP-2 Implementation</p>
+    <p>&copy; 2026 University Maintenance & Complaint Management System | CP-3 Implementation</p>
   </footer>
 
   <script src="js/app.js"></script>

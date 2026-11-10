@@ -6,32 +6,147 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 :root {
-  /* Typography */
+  /* ==========================================================================
+     SHADCN-INSPIRED DESIGN SYSTEM & 60-30-10 COLOR ARCHITECTURE
+     Primary Brand Accent: #0f5586
+     ========================================================================== */
+
+  /* 60% DOMINANT BASE (Canvas / Background - Clean Minimal Light) */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+
+  /* 30% STRUCTURAL ELEMENTS (Cards, Surfaces, Borders, Typography) */
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --card-hover: #f1f5f9;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+
+  /* 10% BRAND ACCENT — PRIMARY COLOR (#0f5586) */
+  --primary: #0f5586;
+  --primary-foreground: #ffffff;
+  --primary-hover: #0c436b;
+  --primary-light: #166da7;
+  --primary-subtle: #e9f2f8;
+  --primary-glow: rgba(15, 85, 134, 0.22);
+  --primary-gradient: linear-gradient(135deg, #0a3d61 0%, #0f5586 50%, #166da7 100%);
+
+  /* Secondary & Muted Structural Tokens */
+  --secondary: #e2e8f0;
+  --secondary-foreground: #0f172a;
+  --secondary-gradient: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+  
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --dim-foreground: #94a3b8;
+
+  --accent: #e9f2f8;
+  --accent-foreground: #0f5586;
+  --accent-gradient: linear-gradient(135deg, #0a3d61 0%, #0f5586 100%);
+
+  /* Functional Status Colors */
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.12);
+  --success-border: rgba(16, 185, 129, 0.3);
+
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.12);
+  --warning-border: rgba(245, 158, 11, 0.3);
+
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.12);
+  --danger-border: rgba(239, 68, 68, 0.3);
+
+  --info: #0284c7;
+  --info-bg: rgba(2, 132, 199, 0.12);
+  --info-border: rgba(2, 132, 199, 0.3);
+
+  /* Borders, Inputs, Focus Rings */
+  --border: #e2e8f0;
+  --border-subtle: #edf2f7;
+  --input: #ffffff;
+  --input-border: #cbd5e1;
+  --input-color: #0f172a;
+  --input-placeholder: #94a3b8;
+  --ring: #0f5586;
+
+  /* Backward Compatibility Semantic Aliases */
+  --bg-deep: var(--background);
+  --bg-surface: var(--card);
+  --bg-surface-elevated: var(--muted);
+  --bg-gradient: radial-gradient(circle at 10% 15%, rgba(15, 85, 134, 0.05) 0%, transparent 45%),
+                 radial-gradient(circle at 85% 10%, rgba(2, 132, 199, 0.04) 0%, transparent 40%),
+                 radial-gradient(circle at 50% 60%, rgba(15, 85, 134, 0.03) 0%, transparent 50%);
+
+  --text-main: var(--foreground);
+  --text-secondary: #334155;
+  --text-muted: var(--muted-foreground);
+  --text-dim: var(--dim-foreground);
+
+  --navbar-bg: rgba(255, 255, 255, 0.94);
+  --glass-bg: rgba(255, 255, 255, 0.92);
+  --glass-bg-card: rgba(255, 255, 255, 0.96);
+  --glass-bg-hover: var(--card-hover);
+  --glass-border: var(--border);
+  --glass-border-light: var(--border-subtle);
+  --glass-border-focus: var(--primary);
+  --glass-blur: blur(16px);
+  --glass-blur-sm: blur(10px);
+  --glass-shadow: 0 4px 18px -2px rgba(15, 23, 42, 0.06), 0 0 1px 1px rgba(15, 23, 42, 0.04);
+  --glass-shadow-lg: 0 16px 36px -8px rgba(15, 23, 42, 0.1), 0 0 2px 1px rgba(15, 23, 42, 0.04);
+  --card-subtle-bg: #ffffff;
+  --card-subtle-border: var(--border);
+
+  /* Typography & Geometry */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Plus Jakarta Sans', var(--font-sans);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-full: 9999px;
+  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-  /* Deep Midnight Color Palette (Dark Default) */
-  --bg-deep: #070c18;
-  --bg-surface: #0c1427;
-  --bg-surface-elevated: #111b33;
-  --bg-gradient: radial-gradient(circle at 10% 15%, rgba(37, 99, 235, 0.18) 0%, transparent 45%),
-                 radial-gradient(circle at 85% 10%, rgba(6, 182, 212, 0.16) 0%, transparent 40%),
-                 radial-gradient(circle at 50% 60%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
-                 radial-gradient(circle at 90% 90%, rgba(245, 158, 11, 0.08) 0%, transparent 40%);
+/* ==========================================================================
+   DARK MODE DESIGN SYSTEM (60% Deep Slate / 30% Structural / 10% #0f5586)
+   ========================================================================== */
+.dark,
+[data-theme="dark"] {
+  /* 60% DOMINANT BASE (Deep Slate Background) */
+  --background: #090e1a;
+  --foreground: #f8fafc;
 
-  /* Accent Gradients & Colors */
-  --primary: #3b82f6;
-  --primary-light: #60a5fa;
-  --primary-glow: rgba(59, 130, 246, 0.4);
-  --primary-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
-  
-  --secondary: #06b6d4;
-  --secondary-gradient: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
-  
-  --accent: #f59e0b;
-  --accent-gradient: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  /* 30% STRUCTURAL ELEMENTS (Cards, Panels, Borders) */
+  --card: #0f172a;
+  --card-foreground: #f8fafc;
+  --card-hover: #162238;
+  --popover: #0f172a;
+  --popover-foreground: #f8fafc;
 
-  /* Status Colors */
+  /* 10% BRAND ACCENT — PRIMARY COLOR (#0f5586) */
+  --primary: #0f5586;
+  --primary-foreground: #ffffff;
+  --primary-hover: #166da7;
+  --primary-light: #288bc9;
+  --primary-subtle: rgba(15, 85, 134, 0.25);
+  --primary-glow: rgba(15, 85, 134, 0.45);
+  --primary-gradient: linear-gradient(135deg, #0a3d61 0%, #0f5586 50%, #1b74b3 100%);
+
+  /* Secondary & Muted Structural Tokens */
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+  --secondary-gradient: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
+
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --dim-foreground: #64748b;
+
+  --accent: #1e293b;
+  --accent-foreground: #38bdf8;
+  --accent-gradient: linear-gradient(135deg, #0a3d61 0%, #0f5586 100%);
+
+  /* Functional Status Colors */
   --success: #10b981;
   --success-bg: rgba(16, 185, 129, 0.15);
   --success-border: rgba(16, 185, 129, 0.35);
@@ -48,110 +163,39 @@
   --info-bg: rgba(56, 189, 248, 0.15);
   --info-border: rgba(56, 189, 248, 0.35);
 
-  /* Glassmorphism System Tokens */
-  --glass-bg: rgba(15, 23, 42, 0.65);
-  --glass-bg-card: rgba(17, 27, 51, 0.72);
-  --glass-bg-hover: rgba(24, 38, 70, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-border-light: rgba(255, 255, 255, 0.18);
-  --glass-border-focus: rgba(59, 130, 246, 0.6);
-  --glass-blur: blur(20px);
-  --glass-blur-sm: blur(12px);
-  --glass-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(255, 255, 255, 0.05);
-  --glass-shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 2px 1px rgba(255, 255, 255, 0.1);
-
-  /* Text Colors */
-  --text-main: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
-
-  /* Form & Controls */
-  --navbar-bg: rgba(7, 12, 24, 0.82);
-  --input-bg: rgba(15, 23, 42, 0.75);
+  /* Borders, Inputs, Focus Rings */
+  --border: rgba(255, 255, 255, 0.09);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --input: rgba(15, 23, 42, 0.85);
   --input-border: rgba(255, 255, 255, 0.14);
   --input-color: #f8fafc;
   --input-placeholder: #64748b;
+  --ring: #166da7;
+
+  /* Backward Compatibility Semantic Aliases */
+  --bg-deep: var(--background);
+  --bg-surface: var(--card);
+  --bg-surface-elevated: #111b33;
+  --bg-gradient: radial-gradient(circle at 10% 15%, rgba(15, 85, 134, 0.14) 0%, transparent 45%),
+                 radial-gradient(circle at 85% 10%, rgba(2, 132, 199, 0.10) 0%, transparent 40%),
+                 radial-gradient(circle at 50% 60%, rgba(15, 85, 134, 0.08) 0%, transparent 50%);
+
+  --text-main: var(--foreground);
+  --text-secondary: #cbd5e1;
+  --text-muted: var(--muted-foreground);
+  --text-dim: var(--dim-foreground);
+
+  --navbar-bg: rgba(9, 14, 26, 0.88);
+  --glass-bg: rgba(15, 23, 42, 0.75);
+  --glass-bg-card: rgba(17, 27, 51, 0.82);
+  --glass-bg-hover: var(--card-hover);
+  --glass-border: var(--border);
+  --glass-border-light: var(--border-subtle);
+  --glass-border-focus: var(--primary-light);
+  --glass-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(255, 255, 255, 0.05);
+  --glass-shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 2px 1px rgba(255, 255, 255, 0.08);
   --card-subtle-bg: rgba(18, 28, 54, 0.5);
-  --card-subtle-border: rgba(255, 255, 255, 0.08);
-
-  /* Radii */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
-  --radius-full: 9999px;
-
-  /* Transitions */
-  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ==========================================================================
-   LIGHT MODE DESIGN SYSTEM
-   ========================================================================== */
-[data-theme="light"] {
-  /* Slate-White Theme */
-  --bg-deep: #f8fafc;
-  --bg-surface: #ffffff;
-  --bg-surface-elevated: #f1f5f9;
-  --bg-gradient: radial-gradient(circle at 10% 15%, rgba(37, 99, 235, 0.09) 0%, transparent 45%),
-                 radial-gradient(circle at 85% 10%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
-                 radial-gradient(circle at 50% 60%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
-                 radial-gradient(circle at 90% 90%, rgba(245, 158, 11, 0.05) 0%, transparent 40%);
-
-  /* Accent Gradients & Colors */
-  --primary: #2563eb;
-  --primary-light: #3b82f6;
-  --primary-glow: rgba(37, 99, 235, 0.25);
-  --primary-gradient: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%);
-  
-  --secondary: #0891b2;
-  --secondary-gradient: linear-gradient(135deg, #0e7490 0%, #0891b2 100%);
-  
-  --accent: #d97706;
-  --accent-gradient: linear-gradient(135deg, #b45309 0%, #d97706 100%);
-
-  /* Status Colors */
-  --success: #059669;
-  --success-bg: rgba(5, 150, 105, 0.12);
-  --success-border: rgba(5, 150, 105, 0.35);
-
-  --warning: #d97706;
-  --warning-bg: rgba(217, 119, 6, 0.12);
-  --warning-border: rgba(217, 119, 6, 0.35);
-
-  --danger: #dc2626;
-  --danger-bg: rgba(220, 38, 38, 0.12);
-  --danger-border: rgba(220, 38, 38, 0.35);
-
-  --info: #0284c7;
-  --info-bg: rgba(2, 132, 199, 0.12);
-  --info-border: rgba(2, 132, 199, 0.35);
-
-  /* Glassmorphism Tokens for Light Mode */
-  --glass-bg: rgba(255, 255, 255, 0.88);
-  --glass-bg-card: rgba(255, 255, 255, 0.95);
-  --glass-bg-hover: rgba(241, 245, 249, 0.95);
-  --glass-border: rgba(203, 213, 225, 0.85);
-  --glass-border-light: rgba(226, 232, 240, 0.9);
-  --glass-border-focus: rgba(37, 99, 235, 0.6);
-  --glass-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 0 1px 1px rgba(15, 23, 42, 0.04);
-  --glass-shadow-lg: 0 20px 40px -10px rgba(15, 23, 42, 0.12), 0 0 2px 1px rgba(15, 23, 42, 0.06);
-
-  /* Text Colors */
-  --text-main: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --text-dim: #94a3b8;
-
-  /* Form & Controls */
-  --navbar-bg: rgba(255, 255, 255, 0.92);
-  --input-bg: #ffffff;
-  --input-border: #cbd5e1;
-  --input-color: #0f172a;
-  --input-placeholder: #94a3b8;
-  --card-subtle-bg: #ffffff;
-  --card-subtle-border: #e2e8f0;
+  --card-subtle-border: var(--border);
 }
 
 /* Base Reset */
@@ -1223,6 +1267,192 @@ body {
 
 .modal-close:hover {
   color: var(--danger);
+}
+
+.modal-box-lg {
+  max-width: 680px !important;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-scroll-body {
+  overflow-y: auto;
+  padding-right: 6px;
+  flex: 1;
+}
+
+.ticket-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.ticket-info-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ticket-info-label {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.ticket-info-val {
+  font-size: 0.92rem;
+  color: var(--text-main);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.details-desc-box {
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.details-photo-container {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  max-height: 240px;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.details-photo-img {
+  width: 100%;
+  height: 240px;
+  object-fit: contain;
+  display: block;
+}
+
+.details-photo-link {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #ffffff;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transition: var(--transition);
+}
+
+.details-photo-link:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+/* ==========================================================================
+   VISUAL LIFECYCLE AUDIT TIMELINE
+   ========================================================================== */
+.timeline-container {
+  position: relative;
+  padding-left: 24px;
+  margin-top: 10px;
+}
+
+.timeline-container::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--primary) 0%, rgba(59, 130, 246, 0.2) 100%);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 18px;
+}
+
+.timeline-item:last-child {
+  margin-bottom: 4px;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -24px;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--bg-surface-elevated);
+  border: 2px solid var(--primary);
+  box-shadow: 0 0 10px var(--primary-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-dot.status-PENDING { border-color: var(--warning); box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
+.timeline-dot.status-ASSIGNED { border-color: #818cf8; box-shadow: 0 0 8px rgba(99, 102, 241, 0.5); }
+.timeline-dot.status-IN_PROGRESS { border-color: var(--secondary); box-shadow: 0 0 8px rgba(6, 182, 212, 0.5); }
+.timeline-dot.status-RESOLVED { border-color: var(--success); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+.timeline-dot.status-REJECTED { border-color: var(--danger); box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+
+.timeline-content {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  transition: var(--transition);
+}
+
+.timeline-content:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.timeline-actor {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timeline-time {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+}
+
+.timeline-note {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-top: 4px;
+  word-break: break-word;
 }
 
 /* Floating Glass Toast Notification */
@@ -2607,10 +2837,46 @@ footer {
   color: #0f172a !important;
 }
 
-[data-theme="light"] #editComplaintMeta {
+[data-theme="light"] #editComplaintMeta,
+[data-theme="light"] #assignComplaintMeta,
+[data-theme="light"] #statusComplaintMeta {
   background: #f1f5f9 !important;
   border: 1px solid #cbd5e1 !important;
   color: #1e40af !important;
+}
+
+[data-theme="light"] .ticket-info-card {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .ticket-info-val {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .details-desc-box {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .timeline-content {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .timeline-content:hover {
+  background: #f8fafc !important;
+  border-color: #93c5fd !important;
+}
+
+[data-theme="light"] .timeline-dot {
+  background: #ffffff !important;
+}
+
+[data-theme="light"] .details-photo-container {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
 }
 
 [data-theme="light"] footer {
